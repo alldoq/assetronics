@@ -317,6 +317,9 @@ restart_application() {
         exit 1
     fi
 
+    # Create logs directory if it doesn't exist
+    mkdir -p logs
+
     # Load environment variables from .env file
     if [ -f "$env_file" ]; then
         log_info "Loading environment variables from ${env_file}"
@@ -331,6 +334,7 @@ restart_application() {
     export PORT="${PORT:-4000}"
     export MIX_ENV="${MIX_ENV:-prod}"
     export PHX_SERVER="true"
+    export RELEASE_COOKIE="${RELEASE_COOKIE:-assetronics_default_cookie}"
 
     log_info "Starting with PORT=${PORT}, MIX_ENV=${MIX_ENV}, PHX_SERVER=${PHX_SERVER}"
 
