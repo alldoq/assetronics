@@ -1,0 +1,526 @@
+#!/bin/bash
+set -e
+
+# ==============================================================================
+# CONFIGURATION
+# ==============================================================================
+
+# Deployment configuration
+DEPLOY_USER="${DEPLOY_USER:-deploy}"
+DEPLOY_PATH="${DEPLOY_PATH:-/var/www/assetronics}"
+REPO_URL="${REPO_URL:-https://github.com/user/assetronics.git}"
+BRANCH="${BRANCH:-main}"
+KEEP_RELEASES="${KEEP_RELEASES:-5}"
+
+# Application configuration
+APP_NAME="${APP_NAME:-assetronics}"
+MIX_ENV="${MIX_ENV:-prod}"
+PORT="${PORT:-4000}"
+DOMAIN="${DOMAIN:-assetronics.com}"
+
+# Version configuration (read from .tool-versions or specify here)
+NODEJS_VERSION="${NODEJS_VERSION:-}"
+ERLANG_VERSION="${ERLANG_VERSION:-}"
+ELIXIR_VERSION="${ELIXIR_VERSION:-}"
+
+# Shared directories and files
+SHARED_DIRS="uploads logs priv/static/uploads"
+SHARED_FILES=".env"
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+# ==============================================================================
+# UTILITY FUNCTIONS
+# ==============================================================================
+
+log_info() {
+    echo -e "${GREEN}[INFO]${NC} $1" >&2
+}
+
+log_warn() {
+    echo -e "${YELLOW}[WARN]${NC} $1" >&2
+}
+
+log_error() {
+    echo -e "${RED}[ERROR]${NC} $1" >&2
+}
+
+command_exists() {
+    command -v "$1" >/dev/null 2>&1
+}
+
+# ==============================================================================
+# ASDF INSTALLATION
+# ==============================================================================
+
+install_asdf() {
+    if [ -d "$HOME/.asdf" ]; then
+        log_info "asdf is already installed"
+        return 0
+    fi
+
+    log_info "Installing asdf..."
+    git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.14.0
+
+    # Add asdf to shell profile
+    if [ -f "$HOME/.bashrc" ]; then
+        echo '. "$HOME/.asdf/asdf.sh"' >> ~/.bashrc
+        echo '. "$HOME/.asdf/completions/asdf.bash"' >> ~/.bashrc
+    fi
+
+    if [ -f "$HOME/.zshrc" ]; then
+        echo '. "$HOME/.asdf/asdf.sh"' >> ~/.zshrc
+    fi
+
+    # Source asdf for current session
+    . "$HOME/.asdf/asdf.sh"
+
+    log_info "asdf installed successfully"
+}
+
+setup_asdf() {
+    # Add asdf shims to PATH first to override system binaries
+    if [ -d "$HOME/.asdf/shims" ]; then
+        export PATH="$HOME/.asdf/shims:$PATH"
+    fi
+
+    # Set ASDF_DIR
+    if [ -d "$HOME/.asdf" ]; then
+        export ASDF_DATA_DIR="$HOME/.asdf"
+    fi
+
+    # Source asdf if available - try multiple locations
+    if [ -f "$HOME/.asdf/asdf.sh" ]; then
+        . "$HOME/.asdf/asdf.sh"
+    elif [ -d "/opt/asdf-vm" ]; then
+        export ASDF_DIR="/opt/asdf-vm"
+        . "/opt/asdf-vm/asdf.sh"
+    fi
+
+    # If asdf command doesn't exist after sourcing, try to install
+    if ! command_exists asdf; then
+        install_asdf
+    fi
+}
+
+install_asdf_plugin() {
+    local plugin=$1
+
+    if asdf plugin list 2>/dev/null | grep -q "^${plugin}$"; then
+        log_info "asdf plugin ${plugin} already installed"
+    else
+        log_info "Installing asdf plugin: ${plugin}"
+        asdf plugin add "${plugin}" >&2 2>&1
+    fi
+}
+
+install_language_versions() {
+    local tool_versions_file=$1
+
+    if [ -f "$tool_versions_file" ]; then
+        log_info "Reading versions from ${tool_versions_file}"
+
+        while IFS= read -r line; do
+            # Skip empty lines and comments
+            [[ -z "$line" || "$line" =~ ^# ]] && continue
+
+            local plugin=$(echo "$line" | awk '{print $1}')
+            local version=$(echo "$line" | awk '{print $2}')
+
+            install_asdf_plugin "$plugin"
+
+            if asdf list "$plugin" 2>/dev/null | grep -q "$version"; then
+                log_info "${plugin} ${version} already installed"
+            else
+                log_info "Installing ${plugin} ${version}..."
+                asdf install "$plugin" "$version" >&2 2>&1
+            fi
+        done < "$tool_versions_file"
+    else
+        log_warn ".tool-versions not found, using environment variables or defaults"
+
+        # Install plugins
+        install_asdf_plugin "nodejs"
+        install_asdf_plugin "erlang"
+        install_asdf_plugin "elixir"
+
+        # Install versions if specified
+        [ -n "$NODEJS_VERSION" ] && asdf install nodejs "$NODEJS_VERSION" >&2 2>&1
+        [ -n "$ERLANG_VERSION" ] && asdf install erlang "$ERLANG_VERSION" >&2 2>&1
+        [ -n "$ELIXIR_VERSION" ] && asdf install elixir "$ELIXIR_VERSION" >&2 2>&1
+    fi
+}
+
+# ==============================================================================
+# DEPLOYMENT FUNCTIONS
+# ==============================================================================
+
+init_directory_structure() {
+    log_info "Initializing directory structure at ${DEPLOY_PATH}"
+
+    mkdir -p "${DEPLOY_PATH}/releases"
+    mkdir -p "${DEPLOY_PATH}/shared"
+
+    # Create shared directories
+    for dir in $SHARED_DIRS; do
+        mkdir -p "${DEPLOY_PATH}/shared/${dir}"
+    done
+
+    log_info "Directory structure initialized"
+}
+
+create_release() {
+    local timestamp=$(date +%Y%m%d%H%M%S)
+    local release_path="${DEPLOY_PATH}/releases/${timestamp}"
+
+    log_info "Creating new release: ${timestamp}"
+
+    # Clone the repository
+    log_info "Cloning repository from ${REPO_URL}"
+    if ! git clone --depth 1 --branch "${BRANCH}" "${REPO_URL}" "${release_path}" >&2 2>&1; then
+        log_error "Failed to clone repository"
+        exit 1
+    fi
+
+    # Verify the clone was successful
+    if [ ! -d "${release_path}" ]; then
+        log_error "Release directory was not created: ${release_path}"
+        exit 1
+    fi
+
+    # Install language versions based on .tool-versions
+    install_language_versions "${release_path}/.tool-versions"
+
+    # Link shared directories and files
+    for dir in $SHARED_DIRS; do
+        if [ -d "${release_path}/${dir}" ]; then
+            rm -rf "${release_path}/${dir}"
+        fi
+        mkdir -p "$(dirname "${release_path}/${dir}")"
+        ln -sf "${DEPLOY_PATH}/shared/${dir}" "${release_path}/${dir}"
+    done
+
+    for file in $SHARED_FILES; do
+        if [ -f "${DEPLOY_PATH}/shared/${file}" ]; then
+            ln -sf "${DEPLOY_PATH}/shared/${file}" "${release_path}/${file}"
+        else
+            log_warn "Shared file ${file} not found in shared directory"
+        fi
+    done
+
+    # Change to backend directory for all mix commands
+    cd "${release_path}/backend"
+
+    # Install dependencies and build
+    log_info "Installing Elixir dependencies..."
+    mix local.hex --force >&2 2>&1
+    mix local.rebar --force >&2 2>&1
+    mix deps.get --only prod >&2 2>&1
+
+    # Build Vue.js frontend
+    if [ -d "${release_path}/frontend" ]; then
+        log_info "Building Vue.js frontend..."
+        cd "${release_path}/frontend"
+        npm ci >&2 2>&1
+        npm run build >&2 2>&1
+
+        # Copy built frontend to Phoenix priv/static
+        log_info "Copying frontend build to priv/static..."
+        mkdir -p "${release_path}/backend/priv/static"
+        cp -r dist/* "${release_path}/backend/priv/static/"
+
+        cd "${release_path}/backend"
+    fi
+
+    # Compile assets (if Phoenix has its own assets)
+    if [ -d "assets" ]; then
+        log_info "Compiling Phoenix assets..."
+        mix assets.deploy >&2 2>&1 || log_warn "assets.deploy not available"
+    fi
+
+    # Build release
+    log_info "Building production release..."
+    MIX_ENV=prod mix compile >&2 2>&1
+    MIX_ENV=prod mix release --overwrite >&2 2>&1
+
+    # Run database migrations using mix (release binary doesn't have env vars yet)
+    log_info "Running database migrations..."
+    local env_file="${DEPLOY_PATH}/shared/.env"
+    if [ -f "$env_file" ]; then
+        log_info "Loading environment variables for migrations..."
+        set -a
+        source "$env_file"
+        set +a
+    fi
+    if ! MIX_ENV=prod mix ecto.migrate >&2 2>&1; then
+        log_warn "Database migrations failed (continuing anyway)"
+    fi
+
+    echo "$timestamp" > "${release_path}/REVISION"
+
+    log_info "Release ${timestamp} created successfully"
+    echo "$timestamp"
+}
+
+update_current_symlink() {
+    local release=$1
+    local release_path="${DEPLOY_PATH}/releases/${release}"
+    local current_path="${DEPLOY_PATH}/current"
+
+    if [ -L "$current_path" ]; then
+        local previous=$(readlink "$current_path")
+        log_info "Previous release: $(basename $previous)"
+    fi
+
+    log_info "Updating current symlink to ${release}"
+    ln -sfn "$release_path" "$current_path"
+}
+
+cleanup_old_releases() {
+    local releases_to_keep=$1
+    local releases_dir="${DEPLOY_PATH}/releases"
+
+    log_info "Cleaning up old releases (keeping ${releases_to_keep})"
+
+    cd "$releases_dir"
+    local count=$(ls -1 | wc -l)
+
+    if [ "$count" -gt "$releases_to_keep" ]; then
+        local to_remove=$((count - releases_to_keep))
+        log_info "Removing ${to_remove} old release(s)"
+
+        ls -1t | tail -n "$to_remove" | while read -r old_release; do
+            log_info "Removing release: ${old_release}"
+            rm -rf "${releases_dir}/${old_release}"
+        done
+    else
+        log_info "No old releases to remove"
+    fi
+}
+
+restart_application() {
+    log_info "Restarting application..."
+
+    local current_path="${DEPLOY_PATH}/current"
+    local release_bin="${current_path}/backend/_build/prod/rel/assetronics/bin/assetronics"
+    local env_file="${DEPLOY_PATH}/shared/.env"
+
+    cd "$current_path/backend"
+
+    # Check if release binary exists
+    if [ ! -f "$release_bin" ]; then
+        log_error "Release binary not found at ${release_bin}"
+        exit 1
+    fi
+
+    # Load environment variables from .env file
+    if [ -f "$env_file" ]; then
+        log_info "Loading environment variables from ${env_file}"
+        set -a
+        source "$env_file"
+        set +a
+    else
+        log_warn ".env file not found at ${env_file}"
+    fi
+
+    # Ensure required environment variables are set
+    export PORT="${PORT:-4000}"
+    export MIX_ENV="${MIX_ENV:-prod}"
+    export PHX_SERVER="true"
+
+    log_info "Starting with PORT=${PORT}, MIX_ENV=${MIX_ENV}, PHX_SERVER=${PHX_SERVER}"
+
+    # Stop existing application using release command
+    log_info "Stopping existing application..."
+    "$release_bin" stop >&2 2>&1 || true
+    sleep 2
+
+    # Kill any process still using the port (fallback)
+    local port_pid=$(lsof -ti :${PORT} 2>/dev/null)
+    if [ -n "$port_pid" ]; then
+        log_warn "Port ${PORT} still in use by PID ${port_pid}, killing it"
+        kill "$port_pid" 2>/dev/null || true
+        sleep 2
+    fi
+
+    # Start application as daemon using release
+    log_info "Starting application as daemon on port ${PORT}..."
+    "$release_bin" daemon >&2 2>&1
+
+    # Wait a moment and verify it started
+    sleep 3
+    if "$release_bin" pid >&2 2>&1; then
+        local pid=$("$release_bin" pid 2>&1)
+        log_info "Application started successfully (PID: ${pid})"
+
+        # Verify it's listening on the correct port
+        sleep 2
+        if lsof -ti :${PORT} >/dev/null 2>&1; then
+            log_info "Application is listening on port ${PORT}"
+        else
+            log_warn "Application may not be listening on port ${PORT}"
+        fi
+    else
+        log_error "Application failed to start"
+        # Show logs for debugging
+        tail -50 "${current_path}/backend/logs/phoenix.log" >&2 2>&1 || true
+        exit 1
+    fi
+}
+
+# ==============================================================================
+# ROLLBACK FUNCTIONS
+# ==============================================================================
+
+rollback() {
+    local current_path="${DEPLOY_PATH}/current"
+
+    if [ ! -L "$current_path" ]; then
+        log_error "No current release found"
+        exit 1
+    fi
+
+    local current_release=$(basename $(readlink "$current_path"))
+    local releases=($(ls -1t "${DEPLOY_PATH}/releases"))
+
+    # Find the previous release
+    local previous_release=""
+    local found_current=false
+
+    for release in "${releases[@]}"; do
+        if [ "$found_current" = true ]; then
+            previous_release="$release"
+            break
+        fi
+        if [ "$release" = "$current_release" ]; then
+            found_current=true
+        fi
+    done
+
+    if [ -z "$previous_release" ]; then
+        log_error "No previous release found to rollback to"
+        exit 1
+    fi
+
+    log_info "Rolling back from ${current_release} to ${previous_release}"
+
+    update_current_symlink "$previous_release"
+    restart_application
+
+    log_info "Rollback completed successfully"
+}
+
+# ==============================================================================
+# MAIN DEPLOYMENT FUNCTION
+# ==============================================================================
+
+deploy() {
+    log_info "Starting deployment to ${DEPLOY_PATH}"
+    log_info "Repository: ${REPO_URL}"
+    log_info "Branch: ${BRANCH}"
+    log_info "Environment: ${MIX_ENV}"
+
+    # Setup asdf
+    setup_asdf
+
+    # Initialize directory structure
+    init_directory_structure
+
+    # Create new release
+    local release=$(create_release)
+
+    # Update current symlink
+    update_current_symlink "$release"
+
+    # Cleanup old releases
+    cleanup_old_releases "$KEEP_RELEASES"
+
+    # Restart application
+    restart_application
+
+    log_info "Deployment completed successfully!"
+    log_info "Release: ${release}"
+}
+
+# ==============================================================================
+# COMMAND LINE INTERFACE
+# ==============================================================================
+
+show_help() {
+    cat << EOF
+Deployment Script for ${APP_NAME}
+
+Usage: $0 [command] [options]
+
+Commands:
+    deploy          Deploy a new release (default)
+    rollback        Rollback to the previous release
+    setup           Setup asdf and install required versions
+    cleanup         Cleanup old releases
+    help            Show this help message
+
+Environment Variables:
+    DEPLOY_PATH     Path where the application will be deployed (default: /var/www/assetronics)
+    REPO_URL        Git repository URL
+    BRANCH          Git branch to deploy (default: main)
+    MIX_ENV         Mix environment (default: prod)
+    KEEP_RELEASES   Number of releases to keep (default: 5)
+    PORT            Application port (default: 4000)
+
+Examples:
+    # Deploy with custom settings
+    REPO_URL=git@github.com:myuser/myapp.git BRANCH=production ./deploy deploy
+
+    # Rollback to previous release
+    ./deploy rollback
+
+    # Setup asdf and languages only
+    ./deploy setup
+
+    # Cleanup old releases
+    ./deploy cleanup
+
+EOF
+}
+
+# ==============================================================================
+# MAIN
+# ==============================================================================
+
+main() {
+    local command=${1:-deploy}
+
+    case "$command" in
+        deploy)
+            deploy
+            ;;
+        rollback)
+            rollback
+            ;;
+        setup)
+            setup_asdf
+            if [ -f .tool-versions ]; then
+                install_language_versions .tool-versions
+            else
+                log_warn "No .tool-versions file found in current directory"
+            fi
+            ;;
+        cleanup)
+            cleanup_old_releases "$KEEP_RELEASES"
+            ;;
+        help|--help|-h)
+            show_help
+            ;;
+        *)
+            log_error "Unknown command: $command"
+            show_help
+            exit 1
+            ;;
+    esac
+}
+
+main "$@"

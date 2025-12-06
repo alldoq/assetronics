@@ -1,0 +1,71 @@
+/* Corporate color palette matching landing page */
+:root {
+  /* Primary colors */
+  --primary-dark: #0f1629;
+  --primary-navy: #1a2342;
+
+  /* Accent colors */
+  --accent-blue: #2d7dd2;
+  --accent-cyan: #00d4ff;
+  --accent-light-blue: #4a9eff;
+  --accent-deep-blue: #1e5aa8;
+
+  /* Text colors */
+  --text-dark: #2c3e50;
+  --text-light: #6c7a8a;
+
+  /* Background colors */
+  --light-bg: #f5f8fc;
+  --border-light: #e1e8ef;
+  --surface: #ffffff;
+
+  /* Semantic color variables for this project */
+  --color-background: var(--surface);
+  --color-background-soft: var(--light-bg);
+  --color-background-mute: #fafafa;
+
+  --color-border: var(--border-light);
+  --color-border-hover: #d4d4d8;
+
+  --color-heading: var(--primary-dark);
+  --color-text: var(--text-dark);
+  --color-subtext: var(--text-light);
+
+  --section-gap: 160px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  font-weight: normal;
+}
+
+body {
+  min-height: 100vh;
+  color: var(--color-text);
+  background: var(--color-background);
+  transition:
+    color 0.5s,
+    background-color 0.5s;
+  line-height: 1.6;
+  font-family:
+    'Open Sans',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    Oxygen,
+    Ubuntu,
+    Cantarell,
+    sans-serif;
+  font-size: 15px;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Poppins', sans-serif;
+}

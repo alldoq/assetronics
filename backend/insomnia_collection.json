@@ -1,0 +1,2043 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2025-01-17T00:00:00.000Z",
+  "__export_source": "insomnia.desktop.app:v2023.5.8",
+  "resources": [
+    {
+      "_id": "wrk_assetronics",
+      "_type": "workspace",
+      "name": "Assetronics API",
+      "description": "Complete API collection for Assetronics asset management system",
+      "scope": "collection"
+    },
+    {
+      "_id": "env_base",
+      "_type": "environment",
+      "name": "Base Environment",
+      "data": {
+        "base_url": "http://localhost:4000/api/v1",
+        "tenant": "acme",
+        "access_token": "",
+        "refresh_token": "",
+        "admin_email": "admin@acme.com",
+        "admin_password": "Admin123!",
+        "manager_email": "manager@acme.com",
+        "manager_password": "Manager123!",
+        "employee_email": "employee@acme.com",
+        "employee_password": "Employee123!",
+        "viewer_email": "viewer@acme.com",
+        "viewer_password": "Viewer123!"
+      },
+      "dataPropertyOrder": {
+        "&": [
+          "base_url",
+          "tenant",
+          "access_token",
+          "refresh_token",
+          "admin_email",
+          "admin_password",
+          "manager_email",
+          "manager_password",
+          "employee_email",
+          "employee_password",
+          "viewer_email",
+          "viewer_password"
+        ]
+      },
+      "color": null,
+      "isPrivate": false
+    },
+    {
+      "_id": "folder_auth",
+      "_type": "request_group",
+      "name": "Authentication",
+      "description": "Authentication and session management endpoints",
+      "environment": {},
+      "parentId": "wrk_assetronics"
+    },
+    {
+      "_id": "req_auth_login",
+      "_type": "request",
+      "name": "Login (Admin)",
+      "method": "POST",
+      "url": "{{ _.base_url }}/auth/login",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"{{ _.admin_email }}\",\n  \"password\": \"{{ _.admin_password }}\"\n}"
+      },
+      "parentId": "folder_auth",
+      "description": "Login with admin credentials. Returns access_token and refresh_token."
+    },
+    {
+      "_id": "req_auth_login_manager",
+      "_type": "request",
+      "name": "Login (Manager)",
+      "method": "POST",
+      "url": "{{ _.base_url }}/auth/login",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"{{ _.manager_email }}\",\n  \"password\": \"{{ _.manager_password }}\"\n}"
+      },
+      "parentId": "folder_auth",
+      "description": "Login with manager credentials"
+    },
+    {
+      "_id": "req_auth_register",
+      "_type": "request",
+      "name": "Register New User",
+      "method": "POST",
+      "url": "{{ _.base_url }}/auth/register",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"newuser@acme.com\",\n  \"password\": \"NewUser123!\",\n  \"first_name\": \"New\",\n  \"last_name\": \"User\",\n  \"phone\": \"+1-555-9999\",\n  \"role\": \"employee\"\n}"
+      },
+      "parentId": "folder_auth",
+      "description": "Register a new user account. Sends welcome and verification emails."
+    },
+    {
+      "_id": "req_auth_refresh",
+      "_type": "request",
+      "name": "Refresh Token",
+      "method": "POST",
+      "url": "{{ _.base_url }}/auth/refresh",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"refresh_token\": \"{{ _.refresh_token }}\"\n}"
+      },
+      "parentId": "folder_auth",
+      "description": "Get a new access token using refresh token"
+    },
+    {
+      "_id": "req_auth_logout",
+      "_type": "request",
+      "name": "Logout",
+      "method": "POST",
+      "url": "{{ _.base_url }}/auth/logout",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "body": {},
+      "parentId": "folder_auth",
+      "description": "Logout and invalidate current token"
+    },
+    {
+      "_id": "req_auth_me",
+      "_type": "request",
+      "name": "Get Current User",
+      "method": "GET",
+      "url": "{{ _.base_url }}/auth/me",
+      "headers": [
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "body": {},
+      "parentId": "folder_auth",
+      "description": "Get currently authenticated user details"
+    },
+    {
+      "_id": "req_auth_password_reset",
+      "_type": "request",
+      "name": "Request Password Reset",
+      "method": "POST",
+      "url": "{{ _.base_url }}/auth/password/reset",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"admin@acme.com\"\n}"
+      },
+      "parentId": "folder_auth",
+      "description": "Request password reset email"
+    },
+    {
+      "_id": "req_auth_password_confirm",
+      "_type": "request",
+      "name": "Confirm Password Reset",
+      "method": "POST",
+      "url": "{{ _.base_url }}/auth/password/confirm",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"token\": \"reset_token_here\",\n  \"password\": \"NewPassword123!\"\n}"
+      },
+      "parentId": "folder_auth",
+      "description": "Reset password with token from email"
+    },
+    {
+      "_id": "req_auth_password_change",
+      "_type": "request",
+      "name": "Change Password",
+      "method": "PATCH",
+      "url": "{{ _.base_url }}/auth/password/change",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"current_password\": \"Admin123!\",\n  \"new_password\": \"NewAdmin123!\"\n}"
+      },
+      "parentId": "folder_auth",
+      "description": "Change password for authenticated user"
+    },
+    {
+      "_id": "req_auth_email_verify",
+      "_type": "request",
+      "name": "Verify Email",
+      "method": "POST",
+      "url": "{{ _.base_url }}/auth/email/verify",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"token\": \"verification_token_here\"\n}"
+      },
+      "parentId": "folder_auth",
+      "description": "Verify email address with token from email"
+    },
+    {
+      "_id": "folder_users",
+      "_type": "request_group",
+      "name": "Users",
+      "description": "User management endpoints",
+      "environment": {},
+      "parentId": "wrk_assetronics"
+    },
+    {
+      "_id": "req_users_list",
+      "_type": "request",
+      "name": "List Users",
+      "method": "GET",
+      "url": "{{ _.base_url }}/users",
+      "headers": [
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "parameters": [
+        {
+          "name": "page",
+          "value": "1",
+          "disabled": true
+        },
+        {
+          "name": "per_page",
+          "value": "20",
+          "disabled": true
+        },
+        {
+          "name": "role",
+          "value": "admin",
+          "disabled": true
+        },
+        {
+          "name": "status",
+          "value": "active",
+          "disabled": true
+        }
+      ],
+      "body": {},
+      "parentId": "folder_users",
+      "description": "List all users with optional filtering"
+    },
+    {
+      "_id": "req_users_show",
+      "_type": "request",
+      "name": "Get User",
+      "method": "GET",
+      "url": "{{ _.base_url }}/users/:user_id",
+      "headers": [
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "body": {},
+      "parentId": "folder_users",
+      "description": "Get specific user by ID"
+    },
+    {
+      "_id": "req_users_create",
+      "_type": "request",
+      "name": "Create User",
+      "method": "POST",
+      "url": "{{ _.base_url }}/users",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"testuser@acme.com\",\n  \"password\": \"TestUser123!\",\n  \"first_name\": \"Test\",\n  \"last_name\": \"User\",\n  \"phone\": \"+1-555-8888\",\n  \"role\": \"employee\"\n}"
+      },
+      "parentId": "folder_users",
+      "description": "Create a new user (admin only)"
+    },
+    {
+      "_id": "req_users_update",
+      "_type": "request",
+      "name": "Update User",
+      "method": "PATCH",
+      "url": "{{ _.base_url }}/users/:user_id",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"first_name\": \"Updated\",\n  \"last_name\": \"Name\",\n  \"phone\": \"+1-555-7777\"\n}"
+      },
+      "parentId": "folder_users",
+      "description": "Update user details"
+    },
+    {
+      "_id": "req_users_delete",
+      "_type": "request",
+      "name": "Delete User",
+      "method": "DELETE",
+      "url": "{{ _.base_url }}/users/:user_id",
+      "headers": [
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "body": {},
+      "parentId": "folder_users",
+      "description": "Delete user (admin only)"
+    },
+    {
+      "_id": "req_users_update_role",
+      "_type": "request",
+      "name": "Update User Role",
+      "method": "PATCH",
+      "url": "{{ _.base_url }}/users/:user_id/role",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"role\": \"manager\"\n}"
+      },
+      "parentId": "folder_users",
+      "description": "Change user role (admin only)"
+    },
+    {
+      "_id": "req_users_update_status",
+      "_type": "request",
+      "name": "Update User Status",
+      "method": "PATCH",
+      "url": "{{ _.base_url }}/users/:user_id/status",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"status\": \"inactive\"\n}"
+      },
+      "parentId": "folder_users",
+      "description": "Change user status (admin only)"
+    },
+    {
+      "_id": "req_users_unlock",
+      "_type": "request",
+      "name": "Unlock User Account",
+      "method": "POST",
+      "url": "{{ _.base_url }}/users/:user_id/unlock",
+      "headers": [
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "body": {},
+      "parentId": "folder_users",
+      "description": "Unlock a locked user account (admin only)"
+    },
+    {
+      "_id": "folder_assets",
+      "_type": "request_group",
+      "name": "Assets",
+      "description": "Asset management endpoints",
+      "environment": {},
+      "parentId": "wrk_assetronics"
+    },
+    {
+      "_id": "req_assets_list",
+      "_type": "request",
+      "name": "List Assets",
+      "method": "GET",
+      "url": "{{ _.base_url }}/assets",
+      "headers": [
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "parameters": [
+        {
+          "name": "page",
+          "value": "1",
+          "disabled": true
+        },
+        {
+          "name": "per_page",
+          "value": "20",
+          "disabled": true
+        },
+        {
+          "name": "status",
+          "value": "assigned",
+          "disabled": true
+        },
+        {
+          "name": "category",
+          "value": "laptop",
+          "disabled": true
+        }
+      ],
+      "body": {},
+      "parentId": "folder_assets",
+      "description": "List all assets with optional filtering"
+    },
+    {
+      "_id": "req_assets_search",
+      "_type": "request",
+      "name": "Search Assets",
+      "method": "GET",
+      "url": "{{ _.base_url }}/assets/search",
+      "headers": [
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "parameters": [
+        {
+          "name": "q",
+          "value": "MacBook",
+          "disabled": false
+        }
+      ],
+      "body": {},
+      "parentId": "folder_assets",
+      "description": "Search assets by name, tag, or serial number"
+    },
+    {
+      "_id": "req_assets_show",
+      "_type": "request",
+      "name": "Get Asset",
+      "method": "GET",
+      "url": "{{ _.base_url }}/assets/:asset_id",
+      "headers": [
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "body": {},
+      "parentId": "folder_assets",
+      "description": "Get specific asset by ID"
+    },
+    {
+      "_id": "req_assets_create",
+      "_type": "request",
+      "name": "Create Asset",
+      "method": "POST",
+      "url": "{{ _.base_url }}/assets",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"asset_tag\": \"LAP-999\",\n  \"name\": \"ThinkPad X1 Carbon\",\n  \"category\": \"laptop\",\n  \"make\": \"Lenovo\",\n  \"model\": \"ThinkPad X1 Carbon Gen 11\",\n  \"serial_number\": \"PF-ABC123\",\n  \"purchase_date\": \"2024-01-15\",\n  \"purchase_cost\": \"1599.00\",\n  \"status\": \"in_stock\",\n  \"condition\": \"new\"\n}"
+      },
+      "parentId": "folder_assets",
+      "description": "Create a new asset"
+    },
+    {
+      "_id": "req_assets_update",
+      "_type": "request",
+      "name": "Update Asset",
+      "method": "PATCH",
+      "url": "{{ _.base_url }}/assets/:asset_id",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"condition\": \"good\",\n  \"notes\": \"Minor wear on keyboard\"\n}"
+      },
+      "parentId": "folder_assets",
+      "description": "Update asset details"
+    },
+    {
+      "_id": "req_assets_delete",
+      "_type": "request",
+      "name": "Delete Asset",
+      "method": "DELETE",
+      "url": "{{ _.base_url }}/assets/:asset_id",
+      "headers": [
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "body": {},
+      "parentId": "folder_assets",
+      "description": "Delete asset (admin only)"
+    },
+    {
+      "_id": "req_assets_assign",
+      "_type": "request",
+      "name": "Assign Asset to Employee",
+      "method": "POST",
+      "url": "{{ _.base_url }}/assets/:asset_id/assign",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"employee_id\": \"employee_uuid_here\",\n  \"assigned_at\": \"2024-01-17T10:00:00Z\",\n  \"notes\": \"New hire equipment\"\n}"
+      },
+      "parentId": "folder_assets",
+      "description": "Assign asset to an employee"
+    },
+    {
+      "_id": "req_assets_return",
+      "_type": "request",
+      "name": "Return Asset from Employee",
+      "method": "POST",
+      "url": "{{ _.base_url }}/assets/:asset_id/return",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"returned_at\": \"2024-01-17T15:00:00Z\",\n  \"condition\": \"good\",\n  \"notes\": \"All good, no issues\"\n}"
+      },
+      "parentId": "folder_assets",
+      "description": "Return asset from employee"
+    },
+    {
+      "_id": "req_assets_transfer",
+      "_type": "request",
+      "name": "Transfer Asset",
+      "method": "POST",
+      "url": "{{ _.base_url }}/assets/:asset_id/transfer",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"from_employee_id\": \"old_employee_uuid\",\n  \"to_employee_id\": \"new_employee_uuid\",\n  \"transferred_at\": \"2024-01-17T12:00:00Z\",\n  \"notes\": \"Employee transfer\"\n}"
+      },
+      "parentId": "folder_assets",
+      "description": "Transfer asset between employees"
+    },
+    {
+      "_id": "req_assets_history",
+      "_type": "request",
+      "name": "Get Asset History",
+      "method": "GET",
+      "url": "{{ _.base_url }}/assets/:asset_id/history",
+      "headers": [
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "body": {},
+      "parentId": "folder_assets",
+      "description": "Get asset assignment/transfer history"
+    },
+    {
+      "_id": "folder_employees",
+      "_type": "request_group",
+      "name": "Employees",
+      "description": "Employee management endpoints",
+      "environment": {},
+      "parentId": "wrk_assetronics"
+    },
+    {
+      "_id": "req_employees_list",
+      "_type": "request",
+      "name": "List Employees",
+      "method": "GET",
+      "url": "{{ _.base_url }}/employees",
+      "headers": [
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "parameters": [
+        {
+          "name": "department",
+          "value": "Engineering",
+          "disabled": true
+        },
+        {
+          "name": "status",
+          "value": "active",
+          "disabled": true
+        }
+      ],
+      "body": {},
+      "parentId": "folder_employees",
+      "description": "List all employees"
+    },
+    {
+      "_id": "req_employees_show",
+      "_type": "request",
+      "name": "Get Employee",
+      "method": "GET",
+      "url": "{{ _.base_url }}/employees/:employee_id",
+      "headers": [
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "body": {},
+      "parentId": "folder_employees",
+      "description": "Get specific employee by ID"
+    },
+    {
+      "_id": "req_employees_create",
+      "_type": "request",
+      "name": "Create Employee",
+      "method": "POST",
+      "url": "{{ _.base_url }}/employees",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"employee_id\": \"EMP999\",\n  \"first_name\": \"Alex\",\n  \"last_name\": \"Johnson\",\n  \"email\": \"alex.johnson@acme.com\",\n  \"phone\": \"+1-555-2000\",\n  \"job_title\": \"Senior Developer\",\n  \"department\": \"Engineering\",\n  \"hire_date\": \"2024-01-15\",\n  \"employment_status\": \"active\",\n  \"work_location_type\": \"hybrid\"\n}"
+      },
+      "parentId": "folder_employees",
+      "description": "Create a new employee"
+    },
+    {
+      "_id": "req_employees_update",
+      "_type": "request",
+      "name": "Update Employee",
+      "method": "PATCH",
+      "url": "{{ _.base_url }}/employees/:employee_id",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"job_title\": \"Lead Developer\",\n  \"department\": \"Engineering\"\n}"
+      },
+      "parentId": "folder_employees",
+      "description": "Update employee details"
+    },
+    {
+      "_id": "req_employees_delete",
+      "_type": "request",
+      "name": "Delete Employee",
+      "method": "DELETE",
+      "url": "{{ _.base_url }}/employees/:employee_id",
+      "headers": [
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "body": {},
+      "parentId": "folder_employees",
+      "description": "Delete employee (admin only)"
+    },
+    {
+      "_id": "req_employees_terminate",
+      "_type": "request",
+      "name": "Terminate Employee",
+      "method": "POST",
+      "url": "{{ _.base_url }}/employees/:employee_id/terminate",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"termination_date\": \"2024-01-31\",\n  \"termination_reason\": \"Resigned\"\n}"
+      },
+      "parentId": "folder_employees",
+      "description": "Terminate employee employment"
+    },
+    {
+      "_id": "req_employees_reactivate",
+      "_type": "request",
+      "name": "Reactivate Employee",
+      "method": "POST",
+      "url": "{{ _.base_url }}/employees/:employee_id/reactivate",
+      "headers": [
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "body": {},
+      "parentId": "folder_employees",
+      "description": "Reactivate terminated employee"
+    },
+    {
+      "_id": "req_employees_assets",
+      "_type": "request",
+      "name": "Get Employee Assets",
+      "method": "GET",
+      "url": "{{ _.base_url }}/employees/:employee_id/assets",
+      "headers": [
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "body": {},
+      "parentId": "folder_employees",
+      "description": "Get all assets assigned to employee"
+    },
+    {
+      "_id": "folder_locations",
+      "_type": "request_group",
+      "name": "Locations",
+      "description": "Location management endpoints",
+      "environment": {},
+      "parentId": "wrk_assetronics"
+    },
+    {
+      "_id": "req_locations_list",
+      "_type": "request",
+      "name": "List Locations",
+      "method": "GET",
+      "url": "{{ _.base_url }}/locations",
+      "headers": [
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "parameters": [
+        {
+          "name": "type",
+          "value": "office",
+          "disabled": true
+        },
+        {
+          "name": "status",
+          "value": "active",
+          "disabled": true
+        }
+      ],
+      "body": {},
+      "parentId": "folder_locations",
+      "description": "List all locations"
+    },
+    {
+      "_id": "req_locations_show",
+      "_type": "request",
+      "name": "Get Location",
+      "method": "GET",
+      "url": "{{ _.base_url }}/locations/:location_id",
+      "headers": [
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "body": {},
+      "parentId": "folder_locations",
+      "description": "Get specific location by ID"
+    },
+    {
+      "_id": "req_locations_create",
+      "_type": "request",
+      "name": "Create Location",
+      "method": "POST",
+      "url": "{{ _.base_url }}/locations",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Chicago Office\",\n  \"location_type\": \"office\",\n  \"address_line1\": \"100 West Monroe St\",\n  \"city\": \"Chicago\",\n  \"state_province\": \"IL\",\n  \"postal_code\": \"60603\",\n  \"country\": \"USA\",\n  \"status\": \"active\"\n}"
+      },
+      "parentId": "folder_locations",
+      "description": "Create a new location"
+    },
+    {
+      "_id": "req_locations_update",
+      "_type": "request",
+      "name": "Update Location",
+      "method": "PATCH",
+      "url": "{{ _.base_url }}/locations/:location_id",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"phone\": \"+1-312-555-0100\",\n  \"email\": \"chicago@acme.com\"\n}"
+      },
+      "parentId": "folder_locations",
+      "description": "Update location details"
+    },
+    {
+      "_id": "req_locations_delete",
+      "_type": "request",
+      "name": "Delete Location",
+      "method": "DELETE",
+      "url": "{{ _.base_url }}/locations/:location_id",
+      "headers": [
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "body": {},
+      "parentId": "folder_locations",
+      "description": "Delete location (admin only)"
+    },
+    {
+      "_id": "req_locations_activate",
+      "_type": "request",
+      "name": "Activate Location",
+      "method": "POST",
+      "url": "{{ _.base_url }}/locations/:location_id/activate",
+      "headers": [
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "body": {},
+      "parentId": "folder_locations",
+      "description": "Activate a location"
+    },
+    {
+      "_id": "req_locations_deactivate",
+      "_type": "request",
+      "name": "Deactivate Location",
+      "method": "POST",
+      "url": "{{ _.base_url }}/locations/:location_id/deactivate",
+      "headers": [
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "body": {},
+      "parentId": "folder_locations",
+      "description": "Deactivate a location"
+    },
+    {
+      "_id": "req_locations_assets",
+      "_type": "request",
+      "name": "Get Location Assets",
+      "method": "GET",
+      "url": "{{ _.base_url }}/locations/:location_id/assets",
+      "headers": [
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "body": {},
+      "parentId": "folder_locations",
+      "description": "Get all assets at location"
+    },
+    {
+      "_id": "req_locations_employees",
+      "_type": "request",
+      "name": "Get Location Employees",
+      "method": "GET",
+      "url": "{{ _.base_url }}/locations/:location_id/employees",
+      "headers": [
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "body": {},
+      "parentId": "folder_locations",
+      "description": "Get all employees at location"
+    },
+    {
+      "_id": "folder_workflows",
+      "_type": "request_group",
+      "name": "Workflows",
+      "description": "Workflow management endpoints",
+      "environment": {},
+      "parentId": "wrk_assetronics"
+    },
+    {
+      "_id": "req_workflows_list",
+      "_type": "request",
+      "name": "List Workflows",
+      "method": "GET",
+      "url": "{{ _.base_url }}/workflows",
+      "headers": [
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "parameters": [
+        {
+          "name": "type",
+          "value": "onboarding",
+          "disabled": true
+        },
+        {
+          "name": "status",
+          "value": "active",
+          "disabled": true
+        }
+      ],
+      "body": {},
+      "parentId": "folder_workflows",
+      "description": "List all workflow templates"
+    },
+    {
+      "_id": "req_workflows_overdue",
+      "_type": "request",
+      "name": "List Overdue Workflows",
+      "method": "GET",
+      "url": "{{ _.base_url }}/workflows/overdue",
+      "headers": [
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "body": {},
+      "parentId": "folder_workflows",
+      "description": "List all overdue workflow executions"
+    },
+    {
+      "_id": "req_workflows_show",
+      "_type": "request",
+      "name": "Get Workflow",
+      "method": "GET",
+      "url": "{{ _.base_url }}/workflows/:workflow_id",
+      "headers": [
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "body": {},
+      "parentId": "folder_workflows",
+      "description": "Get specific workflow template"
+    },
+    {
+      "_id": "req_workflows_create",
+      "_type": "request",
+      "name": "Create Workflow",
+      "method": "POST",
+      "url": "{{ _.base_url }}/workflows",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Laptop Setup Workflow\",\n  \"description\": \"Standard setup process for new laptops\",\n  \"workflow_type\": \"maintenance\",\n  \"status\": \"active\",\n  \"steps\": [\n    {\n      \"name\": \"Install Operating System\",\n      \"description\": \"Install latest OS version\",\n      \"order\": 1,\n      \"required\": true\n    },\n    {\n      \"name\": \"Install Security Software\",\n      \"description\": \"Install antivirus and firewall\",\n      \"order\": 2,\n      \"required\": true\n    },\n    {\n      \"name\": \"Configure Network\",\n      \"description\": \"Setup VPN and network access\",\n      \"order\": 3,\n      \"required\": true\n    }\n  ]\n}"
+      },
+      "parentId": "folder_workflows",
+      "description": "Create a new workflow template"
+    },
+    {
+      "_id": "req_workflows_update",
+      "_type": "request",
+      "name": "Update Workflow",
+      "method": "PATCH",
+      "url": "{{ _.base_url }}/workflows/:workflow_id",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"description\": \"Updated description\",\n  \"status\": \"active\"\n}"
+      },
+      "parentId": "folder_workflows",
+      "description": "Update workflow template"
+    },
+    {
+      "_id": "req_workflows_delete",
+      "_type": "request",
+      "name": "Delete Workflow",
+      "method": "DELETE",
+      "url": "{{ _.base_url }}/workflows/:workflow_id",
+      "headers": [
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "body": {},
+      "parentId": "folder_workflows",
+      "description": "Delete workflow template (admin only)"
+    },
+    {
+      "_id": "req_workflows_start",
+      "_type": "request",
+      "name": "Start Workflow Execution",
+      "method": "POST",
+      "url": "{{ _.base_url }}/workflows/:workflow_id/start",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"assigned_to_id\": \"user_uuid_here\",\n  \"due_date\": \"2024-02-01\",\n  \"metadata\": {\n    \"employee_id\": \"EMP001\",\n    \"asset_id\": \"asset_uuid_here\"\n  }\n}"
+      },
+      "parentId": "folder_workflows",
+      "description": "Start a new workflow execution from template"
+    },
+    {
+      "_id": "req_workflows_advance",
+      "_type": "request",
+      "name": "Advance Workflow Step",
+      "method": "POST",
+      "url": "{{ _.base_url }}/workflows/:workflow_id/advance",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"notes\": \"Completed successfully\"\n}"
+      },
+      "parentId": "folder_workflows",
+      "description": "Mark current step complete and advance to next"
+    },
+    {
+      "_id": "req_workflows_complete",
+      "_type": "request",
+      "name": "Complete Workflow",
+      "method": "POST",
+      "url": "{{ _.base_url }}/workflows/:workflow_id/complete",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"notes\": \"All steps completed\"\n}"
+      },
+      "parentId": "folder_workflows",
+      "description": "Mark workflow execution as completed"
+    },
+    {
+      "_id": "req_workflows_cancel",
+      "_type": "request",
+      "name": "Cancel Workflow",
+      "method": "POST",
+      "url": "{{ _.base_url }}/workflows/:workflow_id/cancel",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"reason\": \"No longer needed\"\n}"
+      },
+      "parentId": "folder_workflows",
+      "description": "Cancel workflow execution"
+    },
+    {
+      "_id": "folder_integrations",
+      "_type": "request_group",
+      "name": "Integrations",
+      "description": "Third-party integration endpoints",
+      "environment": {},
+      "parentId": "wrk_assetronics"
+    },
+    {
+      "_id": "req_integrations_list",
+      "_type": "request",
+      "name": "List Integrations",
+      "method": "GET",
+      "url": "{{ _.base_url }}/integrations",
+      "headers": [
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "parameters": [
+        {
+          "name": "category",
+          "value": "hris",
+          "disabled": true
+        },
+        {
+          "name": "status",
+          "value": "active",
+          "disabled": true
+        }
+      ],
+      "body": {},
+      "parentId": "folder_integrations",
+      "description": "List all integrations"
+    },
+    {
+      "_id": "req_integrations_show",
+      "_type": "request",
+      "name": "Get Integration",
+      "method": "GET",
+      "url": "{{ _.base_url }}/integrations/:integration_id",
+      "headers": [
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "body": {},
+      "parentId": "folder_integrations",
+      "description": "Get specific integration"
+    },
+    {
+      "_id": "req_integrations_create",
+      "_type": "request",
+      "name": "Create Integration",
+      "method": "POST",
+      "url": "{{ _.base_url }}/integrations",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Jira Integration\",\n  \"provider\": \"jira\",\n  \"category\": \"project_management\",\n  \"status\": \"active\",\n  \"config\": {\n    \"site_url\": \"https://acme.atlassian.net\",\n    \"email\": \"admin@acme.com\",\n    \"api_token\": \"your_jira_api_token\"\n  },\n  \"sync_enabled\": false\n}"
+      },
+      "parentId": "folder_integrations",
+      "description": "Create a new integration"
+    },
+    {
+      "_id": "req_integrations_update",
+      "_type": "request",
+      "name": "Update Integration",
+      "method": "PATCH",
+      "url": "{{ _.base_url }}/integrations/:integration_id",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"status\": \"active\",\n  \"sync_frequency\": \"daily\"\n}"
+      },
+      "parentId": "folder_integrations",
+      "description": "Update integration settings"
+    },
+    {
+      "_id": "req_integrations_delete",
+      "_type": "request",
+      "name": "Delete Integration",
+      "method": "DELETE",
+      "url": "{{ _.base_url }}/integrations/:integration_id",
+      "headers": [
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "body": {},
+      "parentId": "folder_integrations",
+      "description": "Delete integration (admin only)"
+    },
+    {
+      "_id": "req_integrations_test",
+      "_type": "request",
+      "name": "Test Integration Connection",
+      "method": "POST",
+      "url": "{{ _.base_url }}/integrations/:integration_id/test",
+      "headers": [
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "body": {},
+      "parentId": "folder_integrations",
+      "description": "Test integration connection and credentials"
+    },
+    {
+      "_id": "req_integrations_sync",
+      "_type": "request",
+      "name": "Trigger Manual Sync",
+      "method": "POST",
+      "url": "{{ _.base_url }}/integrations/:integration_id/sync",
+      "headers": [
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "body": {},
+      "parentId": "folder_integrations",
+      "description": "Manually trigger integration sync"
+    },
+    {
+      "_id": "req_integrations_enable_sync",
+      "_type": "request",
+      "name": "Enable Auto Sync",
+      "method": "POST",
+      "url": "{{ _.base_url }}/integrations/:integration_id/enable-sync",
+      "headers": [
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "body": {},
+      "parentId": "folder_integrations",
+      "description": "Enable automatic syncing"
+    },
+    {
+      "_id": "req_integrations_disable_sync",
+      "_type": "request",
+      "name": "Disable Auto Sync",
+      "method": "POST",
+      "url": "{{ _.base_url }}/integrations/:integration_id/disable-sync",
+      "headers": [
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "body": {},
+      "parentId": "folder_integrations",
+      "description": "Disable automatic syncing"
+    },
+    {
+      "_id": "req_integrations_history",
+      "_type": "request",
+      "name": "Get Sync History",
+      "method": "GET",
+      "url": "{{ _.base_url }}/integrations/:integration_id/sync-history",
+      "headers": [
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "body": {},
+      "parentId": "folder_integrations",
+      "description": "Get integration sync history"
+    },
+    {
+      "_id": "folder_files",
+      "_type": "request_group",
+      "name": "Files",
+      "description": "File upload and management endpoints",
+      "environment": {},
+      "parentId": "wrk_assetronics"
+    },
+    {
+      "_id": "req_files_list",
+      "_type": "request",
+      "name": "List Files",
+      "method": "GET",
+      "url": "{{ _.base_url }}/files",
+      "headers": [
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "parameters": [
+        {
+          "name": "category",
+          "value": "avatar",
+          "disabled": true
+        }
+      ],
+      "body": {},
+      "parentId": "folder_files",
+      "description": "List all uploaded files"
+    },
+    {
+      "_id": "req_files_show",
+      "_type": "request",
+      "name": "Get File",
+      "method": "GET",
+      "url": "{{ _.base_url }}/files/:file_id",
+      "headers": [
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "body": {},
+      "parentId": "folder_files",
+      "description": "Get file metadata and URL"
+    },
+    {
+      "_id": "req_files_upload",
+      "_type": "request",
+      "name": "Upload File",
+      "method": "POST",
+      "url": "{{ _.base_url }}/files",
+      "headers": [
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "body": {
+        "mimeType": "multipart/form-data"
+      },
+      "parentId": "folder_files",
+      "description": "Upload a file (multipart/form-data). Include 'file' field and optional 'category' field."
+    },
+    {
+      "_id": "req_files_delete",
+      "_type": "request",
+      "name": "Delete File",
+      "method": "DELETE",
+      "url": "{{ _.base_url }}/files/:file_id",
+      "headers": [
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "body": {},
+      "parentId": "folder_files",
+      "description": "Delete uploaded file"
+    },
+    {
+      "_id": "req_files_upload_avatar",
+      "_type": "request",
+      "name": "Upload User Avatar",
+      "method": "POST",
+      "url": "{{ _.base_url }}/users/:user_id/avatar",
+      "headers": [
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "body": {
+        "mimeType": "multipart/form-data"
+      },
+      "parentId": "folder_files",
+      "description": "Upload avatar for user (max 5MB, images only)"
+    },
+    {
+      "_id": "req_files_upload_asset_photo",
+      "_type": "request",
+      "name": "Upload Asset Photo",
+      "method": "POST",
+      "url": "{{ _.base_url }}/assets/:asset_id/photos",
+      "headers": [
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "body": {
+        "mimeType": "multipart/form-data"
+      },
+      "parentId": "folder_files",
+      "description": "Upload photo for asset (max 10MB, images only)"
+    },
+    {
+      "_id": "req_files_upload_workflow_attachment",
+      "_type": "request",
+      "name": "Upload Workflow Attachment",
+      "method": "POST",
+      "url": "{{ _.base_url }}/workflows/:workflow_id/attachments",
+      "headers": [
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "body": {
+        "mimeType": "multipart/form-data"
+      },
+      "parentId": "folder_files",
+      "description": "Upload attachment for workflow (max 50MB, all file types)"
+    },
+    {
+      "_id": "folder_tenants",
+      "_type": "request_group",
+      "name": "Tenants",
+      "description": "Tenant management endpoints (admin only)",
+      "environment": {},
+      "parentId": "wrk_assetronics"
+    },
+    {
+      "_id": "req_tenants_show",
+      "_type": "request",
+      "name": "Get Tenant Info",
+      "method": "GET",
+      "url": "{{ _.base_url }}/tenants/:tenant_id",
+      "headers": [
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "body": {},
+      "parentId": "folder_tenants",
+      "description": "Get tenant information"
+    },
+    {
+      "_id": "req_tenants_update",
+      "_type": "request",
+      "name": "Update Tenant",
+      "method": "PATCH",
+      "url": "{{ _.base_url }}/tenants/:tenant_id",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Acme Corporation Updated\",\n  \"settings\": {\n    \"timezone\": \"America/Los_Angeles\"\n  }\n}"
+      },
+      "parentId": "folder_tenants",
+      "description": "Update tenant settings (admin only)"
+    },
+    {
+      "_id": "req_tenants_usage",
+      "_type": "request",
+      "name": "Get Tenant Usage",
+      "method": "GET",
+      "url": "{{ _.base_url }}/tenants/:tenant_id/usage",
+      "headers": [
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "body": {},
+      "parentId": "folder_tenants",
+      "description": "Get tenant usage statistics"
+    },
+    {
+      "_id": "req_tenants_features",
+      "_type": "request",
+      "name": "Get Tenant Features",
+      "method": "GET",
+      "url": "{{ _.base_url }}/tenants/:tenant_id/features",
+      "headers": [
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "body": {},
+      "parentId": "folder_tenants",
+      "description": "Get tenant enabled features"
+    },
+    {
+      "_id": "req_tenants_add_feature",
+      "_type": "request",
+      "name": "Add Tenant Feature",
+      "method": "POST",
+      "url": "{{ _.base_url }}/tenants/:tenant_id/features/add",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"feature\": \"custom_workflows\"\n}"
+      },
+      "parentId": "folder_tenants",
+      "description": "Enable feature for tenant (admin only)"
+    },
+    {
+      "_id": "req_tenants_remove_feature",
+      "_type": "request",
+      "name": "Remove Tenant Feature",
+      "method": "POST",
+      "url": "{{ _.base_url }}/tenants/:tenant_id/features/remove",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"feature\": \"custom_workflows\"\n}"
+      },
+      "parentId": "folder_tenants",
+      "description": "Disable feature for tenant (admin only)"
+    },
+    {
+      "_id": "req_tenants_subscription",
+      "_type": "request",
+      "name": "Update Subscription",
+      "method": "POST",
+      "url": "{{ _.base_url }}/tenants/:tenant_id/subscription",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "X-Tenant-ID",
+          "value": "{{ _.tenant }}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"plan\": \"enterprise\",\n  \"subscription_ends_at\": \"2025-12-31T23:59:59Z\"\n}"
+      },
+      "parentId": "folder_tenants",
+      "description": "Update tenant subscription plan (admin only)"
+    },
+    {
+      "_id": "req_health",
+      "_type": "request",
+      "name": "Health Check",
+      "method": "GET",
+      "url": "{{ _.base_url }}/health",
+      "headers": [],
+      "body": {},
+      "parentId": "wrk_assetronics",
+      "description": "API health check endpoint (no authentication required)"
+    }
+  ]
+}

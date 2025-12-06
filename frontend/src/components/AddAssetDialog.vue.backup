@@ -1,0 +1,585 @@
+<template>
+  <Modal v-model="isOpen" title="Add new asset" size="lg" @update:model-value="handleClose">
+    <!-- Tabs -->
+    <div class="border-b border-neutral-200 -mx-6 px-6">
+      <nav class="flex space-x-6 overflow-x-auto" aria-label="Form sections">
+        <button
+          v-for="(tab, index) in tabs"
+          :key="tab.id"
+          type="button"
+          @click="activeTab = tab.id"
+          class="relative py-3 px-1 text-sm font-medium whitespace-nowrap transition-colors touch-target"
+          :class="
+            activeTab === tab.id
+              ? 'text-primary-600 border-b-2 border-primary-600'
+              : 'text-neutral-600 hover:text-neutral-900 border-b-2 border-transparent'
+          "
+        >
+          <span class="flex items-center">
+            <component :is="tab.icon" class="w-4 h-4 mr-2" />
+            {{ tab.label }}
+            <span
+              v-if="hasErrors(tab.fields)"
+              class="ml-2 w-2 h-2 rounded-full bg-red-500"
+              aria-label="Has errors"
+            ></span>
+          </span>
+        </button>
+      </nav>
+    </div>
+
+    <form @submit.prevent="handleSubmit" class="mt-6">
+      <!-- Tab 1: Asset Information -->
+      <div v-show="activeTab === 'asset-info'" class="space-y-4">
+        <!-- Asset name -->
+        <div>
+            <label for="asset-name" class="block text-sm font-medium text-neutral-700 mb-2">
+              Asset name <span class="text-red-500">*</span>
+            </label>
+            <input
+              id="asset-name"
+              ref="firstInputRef"
+              v-model="form.name"
+              type="text"
+              required
+              tabindex="1"
+              class="input-refined"
+              placeholder="e.g., MacBook Pro 16&quot;"
+              @focus="clearError('name')"
+            />
+            <p v-if="errors.name" class="mt-2 text-sm text-red-600">{{ errors.name }}</p>
+          </div>
+
+          <!-- Serial number -->
+          <div>
+            <label for="serial-number" class="block text-sm font-medium text-neutral-700 mb-2">
+              Serial number
+            </label>
+            <input
+              id="serial-number"
+              v-model="form.serial_number"
+              type="text"
+              tabindex="2"
+              class="input-refined"
+              placeholder="e.g., ABC123456789"
+              @focus="clearError('serial_number')"
+            />
+            <p v-if="errors.serial_number" class="mt-2 text-sm text-red-600">
+              {{ errors.serial_number }}
+            </p>
+          </div>
+
+          <!-- Category and Status row -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label for="category" class="block text-sm font-medium text-neutral-700 mb-2">
+                Category <span class="text-red-500">*</span>
+              </label>
+              <select
+                id="category"
+                v-model="form.category_id"
+                required
+                tabindex="3"
+                class="input-refined"
+                @focus="clearError('category_id')"
+              >
+                <option value="">Select category</option>
+                <option value="1">Laptop</option>
+                <option value="2">Desktop</option>
+                <option value="3">Monitor</option>
+                <option value="4">Phone</option>
+                <option value="5">Tablet</option>
+                <option value="6">Accessories</option>
+              </select>
+              <p v-if="errors.category_id" class="mt-2 text-sm text-red-600">
+                {{ errors.category_id }}
+              </p>
+            </div>
+
+            <div>
+              <label for="status" class="block text-sm font-medium text-neutral-700 mb-2">
+                Status <span class="text-red-500">*</span>
+              </label>
+              <select
+                id="status"
+                v-model="form.status"
+                required
+                tabindex="4"
+                class="input-refined"
+                @focus="clearError('status')"
+              >
+                <option value="">Select status</option>
+                <option value="available">Available</option>
+                <option value="assigned">Assigned</option>
+                <option value="maintenance">In maintenance</option>
+                <option value="retired">Retired</option>
+              </select>
+              <p v-if="errors.status" class="mt-2 text-sm text-red-600">{{ errors.status }}</p>
+            </div>
+          </div>
+
+          <!-- Description -->
+          <div>
+            <label for="description" class="block text-sm font-medium text-neutral-700 mb-2">
+              Description
+            </label>
+            <textarea
+              id="description"
+              v-model="form.description"
+              rows="3"
+              tabindex="5"
+              class="input-refined resize-none"
+              placeholder="Add any additional details about this asset..."
+            ></textarea>
+        </div>
+      </div>
+
+      <!-- Tab 2: Purchase Information -->
+      <div v-show="activeTab === 'purchase-info'" class="space-y-4">
+          <!-- Purchase date and price -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label for="purchase-date" class="block text-sm font-medium text-neutral-700 mb-2">
+                Purchase date
+              </label>
+              <input
+                id="purchase-date"
+                v-model="form.purchase_date"
+                type="date"
+                tabindex="6"
+                class="input-refined"
+              />
+            </div>
+
+            <div>
+              <label for="purchase-price" class="block text-sm font-medium text-neutral-700 mb-2">
+                Purchase price
+              </label>
+              <div class="relative">
+                <span
+                  class="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 text-sm"
+                >
+                  $
+                </span>
+                <input
+                  id="purchase-price"
+                  v-model="form.purchase_price"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  tabindex="7"
+                  class="input-refined pl-7"
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Vendor -->
+          <div>
+            <label for="vendor" class="block text-sm font-medium text-neutral-700 mb-2">
+              Vendor
+            </label>
+            <select id="vendor" v-model="form.vendor_id" tabindex="8" class="input-refined">
+              <option value="">Select vendor</option>
+              <option value="1">Apple</option>
+              <option value="2">Dell</option>
+              <option value="3">HP</option>
+              <option value="4">Lenovo</option>
+              <option value="5">Amazon</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 3: Location & Assignment -->
+      <div v-show="activeTab === 'location-assignment'" class="space-y-4">
+        <!-- Department and Location -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label for="department" class="block text-sm font-medium text-neutral-700 mb-2">
+                Department
+              </label>
+              <select id="department" v-model="form.department_id" tabindex="9" class="input-refined">
+                <option value="">Select department</option>
+                <option value="1">Engineering</option>
+                <option value="2">Sales</option>
+                <option value="3">Marketing</option>
+                <option value="4">HR</option>
+                <option value="5">Finance</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="location" class="block text-sm font-medium text-neutral-700 mb-2">
+                Location
+              </label>
+              <select id="location" v-model="form.location_id" tabindex="10" class="input-refined">
+                <option value="">Select location</option>
+                <option value="1">Main Office</option>
+                <option value="2">Warehouse</option>
+                <option value="3">Remote</option>
+                <option value="4">Branch Office A</option>
+                <option value="5">Branch Office B</option>
+              </select>
+            </div>
+          </div>
+
+        <!-- Assigned to -->
+        <div>
+          <label for="assigned-to" class="block text-sm font-medium text-neutral-700 mb-2">
+            Assigned to employee
+          </label>
+          <select id="assigned-to" v-model="form.employee_id" tabindex="11" class="input-refined">
+            <option value="">Not assigned</option>
+            <option value="1">John Smith</option>
+            <option value="2">Jane Doe</option>
+            <option value="3">Mike Johnson</option>
+            <option value="4">Sarah Williams</option>
+          </select>
+          <p class="mt-1 text-xs text-neutral-500">
+            Leave empty to keep the asset unassigned
+          </p>
+        </div>
+      </div>
+
+      <!-- Tab 4: Additional Information -->
+      <div v-show="activeTab === 'additional-info'" class="space-y-4">
+          <!-- Warranty expiration -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label
+                for="warranty-expiration"
+                class="block text-sm font-medium text-neutral-700 mb-2"
+              >
+                Warranty expiration
+              </label>
+              <input
+                id="warranty-expiration"
+                v-model="form.warranty_expiration"
+                type="date"
+                tabindex="12"
+                class="input-refined"
+              />
+            </div>
+
+            <div>
+              <label for="condition" class="block text-sm font-medium text-neutral-700 mb-2">
+                Condition
+              </label>
+              <select id="condition" v-model="form.condition" tabindex="13" class="input-refined">
+                <option value="">Select condition</option>
+                <option value="new">New</option>
+                <option value="excellent">Excellent</option>
+                <option value="good">Good</option>
+                <option value="fair">Fair</option>
+                <option value="poor">Poor</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Notes -->
+          <div>
+            <label for="notes" class="block text-sm font-medium text-neutral-700 mb-2">
+              Notes
+            </label>
+            <textarea
+              id="notes"
+              v-model="form.notes"
+              rows="3"
+              tabindex="14"
+              class="input-refined resize-none"
+              placeholder="Add any internal notes or comments..."
+            ></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Navigation buttons -->
+      <div class="flex justify-between mt-6 pt-6 border-t border-neutral-200">
+        <button
+          v-if="activeTab !== 'asset-info'"
+          type="button"
+          @click="goToPreviousTab"
+          class="btn-secondary"
+        >
+          <svg class="w-5 h-5 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg>
+          Previous
+        </button>
+        <div v-else></div>
+
+        <button
+          v-if="activeTab !== 'additional-info'"
+          type="button"
+          @click="goToNextTab"
+          class="btn-primary"
+        >
+          Next
+          <svg class="w-5 h-5 ml-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+      </div>
+    </form>
+
+    <template #footer>
+      <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
+        <button type="button" @click="handleClose" class="btn-secondary">Cancel</button>
+        <button
+          v-if="activeTab === 'additional-info'"
+          type="submit"
+          @click="handleSubmit"
+          :disabled="isSubmitting"
+          class="btn-primary"
+        >
+          <span v-if="!isSubmitting">Add asset</span>
+          <span v-else class="flex items-center justify-center">
+            <svg
+              class="animate-spin -ml-1 mr-2 h-5 w-5 text-white"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                class="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                stroke-width="4"
+              ></circle>
+              <path
+                class="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              ></path>
+            </svg>
+            Adding...
+          </span>
+        </button>
+      </div>
+    </template>
+  </Modal>
+</template>
+
+<script setup lang="ts">
+import { ref, reactive, watch, nextTick, h } from 'vue'
+import Modal from './Modal.vue'
+
+interface Props {
+  modelValue: boolean
+}
+
+interface Tab {
+  id: string
+  label: string
+  icon: () => any
+  fields: string[]
+}
+
+const props = defineProps<Props>()
+
+const emit = defineEmits<{
+  'update:modelValue': [value: boolean]
+  submit: [data: any]
+}>()
+
+const isOpen = ref(props.modelValue)
+const isSubmitting = ref(false)
+const firstInputRef = ref<HTMLInputElement | null>(null)
+const activeTab = ref<string>('asset-info')
+
+// Tab definitions
+const tabs: Tab[] = [
+  {
+    id: 'asset-info',
+    label: 'Asset info',
+    icon: () =>
+      h(
+        'svg',
+        { class: 'w-4 h-4', fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24' },
+        h('path', {
+          'stroke-linecap': 'round',
+          'stroke-linejoin': 'round',
+          'stroke-width': '2',
+          d: 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
+        })
+      ),
+    fields: ['name', 'serial_number', 'category_id', 'status', 'description'],
+  },
+  {
+    id: 'purchase-info',
+    label: 'Purchase',
+    icon: () =>
+      h(
+        'svg',
+        { class: 'w-4 h-4', fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24' },
+        h('path', {
+          'stroke-linecap': 'round',
+          'stroke-linejoin': 'round',
+          'stroke-width': '2',
+          d: 'M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z',
+        })
+      ),
+    fields: ['purchase_date', 'purchase_price', 'vendor_id'],
+  },
+  {
+    id: 'location-assignment',
+    label: 'Location',
+    icon: () =>
+      h(
+        'svg',
+        { class: 'w-4 h-4', fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24' },
+        h('path', {
+          'stroke-linecap': 'round',
+          'stroke-linejoin': 'round',
+          'stroke-width': '2',
+          d: 'M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z',
+        }),
+        h('path', {
+          'stroke-linecap': 'round',
+          'stroke-linejoin': 'round',
+          'stroke-width': '2',
+          d: 'M15 11a3 3 0 11-6 0 3 3 0 016 0z',
+        })
+      ),
+    fields: ['department_id', 'location_id', 'employee_id'],
+  },
+  {
+    id: 'additional-info',
+    label: 'Additional',
+    icon: () =>
+      h(
+        'svg',
+        { class: 'w-4 h-4', fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24' },
+        h('path', {
+          'stroke-linecap': 'round',
+          'stroke-linejoin': 'round',
+          'stroke-width': '2',
+          d: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
+        })
+      ),
+    fields: ['warranty_expiration', 'condition', 'notes'],
+  },
+]
+
+// Form data
+const form = reactive({
+  name: '',
+  serial_number: '',
+  category_id: '',
+  status: '',
+  description: '',
+  purchase_date: '',
+  purchase_price: '',
+  vendor_id: '',
+  department_id: '',
+  location_id: '',
+  employee_id: '',
+  warranty_expiration: '',
+  condition: '',
+  notes: '',
+})
+
+// Form errors
+const errors = reactive<Record<string, string>>({})
+
+// Watch for prop changes
+watch(
+  () => props.modelValue,
+  (newValue) => {
+    isOpen.value = newValue
+  }
+)
+
+// Watch for local changes
+watch(isOpen, (newValue) => {
+  emit('update:modelValue', newValue)
+})
+
+const clearError = (field: string) => {
+  delete errors[field]
+}
+
+const validateForm = (): boolean => {
+  const newErrors: Record<string, string> = {}
+
+  if (!form.name.trim()) {
+    newErrors.name = 'Asset name is required'
+  }
+
+  if (!form.category_id) {
+    newErrors.category_id = 'Category is required'
+  }
+
+  if (!form.status) {
+    newErrors.status = 'Status is required'
+  }
+
+  Object.assign(errors, newErrors)
+  return Object.keys(newErrors).length === 0
+}
+
+const handleSubmit = async () => {
+  // Clear previous errors
+  Object.keys(errors).forEach((key) => delete errors[key])
+
+  // Validate
+  if (!validateForm()) {
+    return
+  }
+
+  isSubmitting.value = true
+
+  try {
+    // Emit the form data to parent component
+    emit('submit', { ...form })
+
+    // Reset form after successful submission
+    Object.keys(form).forEach((key) => {
+      form[key as keyof typeof form] = ''
+    })
+
+    // Close modal
+    handleClose()
+  } catch (error) {
+    console.error('Error submitting form:', error)
+  } finally {
+    isSubmitting.value = false
+  }
+}
+
+const handleClose = () => {
+  // Clear form and errors when closing
+  Object.keys(form).forEach((key) => {
+    form[key as keyof typeof form] = ''
+  })
+  Object.keys(errors).forEach((key) => delete errors[key])
+
+  // Reset to first tab
+  activeTab.value = 'asset-info'
+
+  isOpen.value = false
+}
+
+// Tab navigation
+const goToNextTab = () => {
+  const currentIndex = tabs.findIndex((tab) => tab.id === activeTab.value)
+  if (currentIndex < tabs.length - 1) {
+    activeTab.value = tabs[currentIndex + 1].id
+  }
+}
+
+const goToPreviousTab = () => {
+  const currentIndex = tabs.findIndex((tab) => tab.id === activeTab.value)
+  if (currentIndex > 0) {
+    activeTab.value = tabs[currentIndex - 1].id
+  }
+}
+
+// Check if a tab has errors
+const hasErrors = (fields: string[]): boolean => {
+  return fields.some((field) => errors[field])
+}
+</script>

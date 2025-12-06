@@ -1,0 +1,16 @@
+#!/bin/bash
+# Remote Production deployment for Assetronics
+
+export REMOTE_HOST="192.168.1.139"
+export REMOTE_USER="marcin"
+export REMOTE_PORT="22"
+
+export REPO_URL="git@github.com:yourusername/assetronics.git"
+export BRANCH="main"
+export DEPLOY_PATH="/home/marcin/assetronics"
+export MIX_ENV="prod"
+export KEEP_RELEASES="5"
+export APP_PORT="4000"
+export DOMAIN="assetronics.com"
+
+$(dirname "$0")/deploy_remote "$@"
