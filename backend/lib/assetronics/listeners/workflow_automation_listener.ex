@@ -158,6 +158,18 @@ defmodule Assetronics.Listeners.WorkflowAutomationListener do
     {:noreply, state}
   end
 
+  @impl true
+  def handle_info({"asset_assigned", asset}, state) do
+    Logger.info("[WorkflowAutomationListener] Asset #{asset.id} assigned to employee #{asset.employee_id}")
+
+    # Check if employee has an active onboarding workflow
+    if asset.employee_id do
+      handle_asset_assignment_workflow_progression(state.tenant, asset)
+    end
+
+    {:noreply, state}
+  end
+
   # Catch-all for events we don't handle yet
   @impl true
   def handle_info(event, state) do
@@ -166,6 +178,57 @@ defmodule Assetronics.Listeners.WorkflowAutomationListener do
   end
 
   ## Private Functions
+
+  defp handle_asset_assignment_workflow_progression(tenant, asset) do
+    # Find active onboarding workflows for this employee
+    employee_workflows = Workflows.list_workflows_for_employee(tenant, asset.employee_id)
+
+    # Filter for active onboarding workflows
+    active_onboarding_workflows = Enum.filter(employee_workflows, fn workflow ->
+      workflow.workflow_type == "onboarding" &&
+        workflow.status in ["pending", "in_progress"]
+    end)
+
+    # For each active onboarding workflow, check if current step is "Assign hardware"
+    Enum.each(active_onboarding_workflows, fn workflow ->
+      steps = workflow.steps || []
+      current_step_index = workflow.current_step
+
+      if current_step_index < length(steps) do
+        current_step = Enum.at(steps, current_step_index)
+
+        # Check if current step is "Assign hardware"
+        if current_step && String.downcase(current_step["name"]) =~ ~r/(assign|hardware)/ do
+          Logger.info("[WorkflowAutomationListener] Automatically advancing workflow #{workflow.id} - Asset assigned")
+
+          # Advance the workflow step
+          case Workflows.advance_workflow_step(tenant, workflow) do
+            {:ok, updated_workflow} ->
+              Logger.info("[WorkflowAutomationListener] Successfully advanced workflow #{workflow.id} from step #{current_step_index} to #{updated_workflow.current_step}")
+
+              # Update asset_id if workflow doesn't have one yet
+              if is_nil(workflow.asset_id) do
+                case Workflows.update_workflow(tenant, updated_workflow, %{asset_id: asset.id}) do
+                  {:ok, _} ->
+                    Logger.info("[WorkflowAutomationListener] Updated workflow #{workflow.id} with asset_id #{asset.id}")
+
+                  {:error, changeset} ->
+                    Logger.error("[WorkflowAutomationListener] Failed to update workflow asset_id: #{inspect(changeset.errors)}")
+                end
+              end
+
+            {:error, :last_step} ->
+              Logger.debug("[WorkflowAutomationListener] Workflow #{workflow.id} is already at last step")
+
+            {:error, reason} ->
+              Logger.error("[WorkflowAutomationListener] Failed to advance workflow #{workflow.id}: #{inspect(reason)}")
+          end
+        else
+          Logger.debug("[WorkflowAutomationListener] Current step '#{current_step["name"]}' for workflow #{workflow.id} is not 'Assign hardware', skipping")
+        end
+      end
+    end)
+  end
 
   defp via_tuple(tenant) do
     {:via, Registry, {Assetronics.ListenerRegistry, {__MODULE__, tenant}}}

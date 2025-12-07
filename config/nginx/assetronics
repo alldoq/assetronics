@@ -1,0 +1,182 @@
+# Assetronics - Phoenix API + Vue.js Frontend
+upstream phoenix_assetronics {
+    server 127.0.0.1:4025;
+}
+
+# app.assetronics.com - redirect to login
+server {
+    server_name app.assetronics.com;
+
+    # For Let's Encrypt SSL verification
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    # Root for static files (Vue.js build)
+    root /home/marcin/assetronics/current/frontend/dist;
+
+    # Uploaded files
+    location /uploads {
+        alias /home/marcin/assetronics/shared/uploads;
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
+    # Static assets (Vue.js build, cached long-term)
+    location /assets {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        try_files $uri =404;
+    }
+
+    # API routes - proxy to Phoenix
+    location /api {
+        proxy_pass http://phoenix_assetronics;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 60s;
+        proxy_send_timeout 60s;
+
+        # For file uploads
+        client_max_body_size 50M;
+    }
+
+    # WebSocket support for Phoenix LiveView
+    location /live {
+        proxy_pass http://phoenix_assetronics;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # Sitemap and robots.txt - proxy to Phoenix
+    location = /sitemap.xml {
+        proxy_pass http://phoenix_assetronics;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location = /robots.txt {
+        proxy_pass http://phoenix_assetronics;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # Redirect root to /login
+    location = / {
+        return 301 /login;
+    }
+
+    # SPA fallback - serve index.html for all other routes
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    listen 80;
+    listen [::]:80;
+}
+
+# assetronics.com - main site with landing page
+server {
+    server_name assetronics.com www.assetronics.com;
+
+    # For Let's Encrypt SSL verification
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    # Serve static landing page
+    location = / {
+        root /home/marcin/assetronics/current/backend/priv/static;
+        try_files /landing.html =404;
+    }
+
+    # Static images and assets for landing page
+    location /images {
+        alias /home/marcin/assetronics/current/backend/priv/static/images;
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
+    # Uploaded files
+    location /uploads {
+        alias /home/marcin/assetronics/shared/uploads;
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
+    # API routes - proxy to Phoenix
+    location /api {
+        proxy_pass http://phoenix_assetronics;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 60s;
+        proxy_send_timeout 60s;
+
+        # For file uploads
+        client_max_body_size 50M;
+    }
+
+    # WebSocket support for Phoenix LiveView
+    location /live {
+        proxy_pass http://phoenix_assetronics;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # Sitemap and robots.txt - proxy to Phoenix
+    location = /sitemap.xml {
+        proxy_pass http://phoenix_assetronics;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location = /robots.txt {
+        proxy_pass http://phoenix_assetronics;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # App routes - redirect to app subdomain
+    location /login {
+        return 301 https://app.assetronics.com/login;
+    }
+
+    location /dashboard {
+        return 301 https://app.assetronics.com/dashboard;
+    }
+
+    listen 80;
+    listen [::]:80;
+}

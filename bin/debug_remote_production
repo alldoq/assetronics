@@ -1,0 +1,25 @@
+#!/bin/bash
+# Remote debug script for production
+
+export REMOTE_HOST="192.168.1.139"
+export REMOTE_USER="marcin"
+export REMOTE_PORT="22"
+export DEPLOY_PATH="/home/marcin/assetronics"
+
+SSH_CMD="ssh -p ${REMOTE_PORT} ${REMOTE_USER}@${REMOTE_HOST}"
+SCP_CMD="scp -P ${REMOTE_PORT}"
+
+echo "[INFO] Connecting to ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_PORT}"
+
+# Copy debug script to remote server
+echo "[INFO] Copying debug script to remote server..."
+${SCP_CMD} "$(dirname "$0")/debug_deployment" "${REMOTE_USER}@${REMOTE_HOST}:/tmp/debug_deployment" 2>/dev/null || \
+    ${SSH_CMD} "cat > /tmp/debug_deployment" < "$(dirname "$0")/debug_deployment"
+
+# Execute debug on remote server
+echo "[INFO] Running debug script..."
+echo ""
+${SSH_CMD} "
+    chmod +x /tmp/debug_deployment
+    DEPLOY_PATH='${DEPLOY_PATH}' /tmp/debug_deployment
+"

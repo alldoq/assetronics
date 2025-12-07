@@ -65,8 +65,15 @@ defmodule Assetronics.Assets.Asset do
     timestamps()
   end
 
-  @doc false
-  def changeset(asset, attrs) do
+  @doc """
+  Changeset for asset with optional dynamic status validation.
+
+  If `tenant` is provided in opts, validates status against the tenant's configured statuses.
+  Otherwise falls back to hardcoded status values for safety.
+  """
+  def changeset(asset, attrs, opts \\ []) do
+    tenant = Keyword.get(opts, :tenant)
+
     asset
     |> cast(attrs, [
       :asset_tag,
@@ -115,7 +122,7 @@ defmodule Assetronics.Assets.Asset do
     ])
     |> validate_required([:asset_tag, :name, :category, :status])
     |> validate_inclusion(:category, @category_values)
-    |> validate_inclusion(:status, @status_values)
+    |> validate_status(tenant)
     |> validate_inclusion(:condition, @condition_values, allow_nil: true)
     |> validate_inclusion(:assignment_type, @assignment_types, allow_nil: true)
     |> validate_inclusion(:depreciation_method, @depreciation_methods, allow_nil: true)
@@ -149,6 +156,49 @@ defmodule Assetronics.Assets.Asset do
 
       _ ->
         changeset
+    end
+  end
+
+  defp validate_status(changeset, nil) do
+    # No tenant provided, use hardcoded fallback
+    validate_inclusion(changeset, :status, @status_values)
+  end
+
+  defp validate_status(changeset, tenant) when is_binary(tenant) do
+    # Tenant provided, validate against database statuses
+    status = get_change(changeset, :status)
+
+    if status do
+      valid_statuses = get_valid_status_values(tenant)
+
+      if status in valid_statuses do
+        changeset
+      else
+        add_error(
+          changeset,
+          :status,
+          "is not a valid status. Must be one of: #{Enum.join(valid_statuses, ", ")}",
+          validation: :inclusion,
+          enum: valid_statuses
+        )
+      end
+    else
+      changeset
+    end
+  end
+
+  defp get_valid_status_values(tenant) do
+    try do
+      # Query the statuses table for this tenant
+      import Ecto.Query
+      alias Assetronics.Repo
+      alias Assetronics.Statuses.Status
+
+      query = from s in Status, select: s.value
+      Repo.all(query, prefix: Triplex.to_prefix(tenant))
+    rescue
+      # If database query fails, fall back to hardcoded values
+      _ -> @status_values
     end
   end
 

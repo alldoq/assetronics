@@ -31,6 +31,7 @@ defmodule Assetronics.Listeners.WorkflowCompletionListener do
 
   alias Assetronics.Assets
   alias Assetronics.Workflows.Workflow
+  alias Assetronics.Software
 
   ## Client API
 
@@ -138,6 +139,29 @@ defmodule Assetronics.Listeners.WorkflowCompletionListener do
   end
 
   defp handle_offboarding_completion(tenant, workflow) do
+    # Revoke all software licenses for the employee
+    if workflow.employee_id do
+      Logger.info("[WorkflowCompletionListener] Revoking software licenses for employee: #{workflow.employee_id}")
+
+      try do
+        case Software.revoke_employee_licenses(tenant, workflow.employee_id) do
+          results when is_list(results) ->
+            success_count = Enum.count(results, fn
+              {:ok, _} -> true
+              _ -> false
+            end)
+            Logger.info("[WorkflowCompletionListener] Successfully revoked #{success_count} software licenses for employee #{workflow.employee_id}")
+
+          _ ->
+            Logger.warning("[WorkflowCompletionListener] No licenses found to revoke for employee #{workflow.employee_id}")
+        end
+      rescue
+        error ->
+          Logger.error("[WorkflowCompletionListener] Error revoking licenses: #{inspect(error)}")
+      end
+    end
+
+    # Handle asset return/status update
     if workflow.asset_id do
       Logger.info("[WorkflowCompletionListener] Handling offboarding workflow completion for asset: #{workflow.asset_id}")
 

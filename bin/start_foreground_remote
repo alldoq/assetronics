@@ -1,0 +1,34 @@
+#!/bin/bash
+# Start application in foreground mode to see errors
+
+export REMOTE_HOST="192.168.1.139"
+export REMOTE_USER="marcin"
+export REMOTE_PORT="22"
+export DEPLOY_PATH="/home/marcin/assetronics"
+
+SSH_CMD="ssh -p ${REMOTE_PORT} ${REMOTE_USER}@${REMOTE_HOST}"
+
+echo "[INFO] Starting application in foreground mode to see errors..."
+echo "[INFO] Press Ctrl+C to stop"
+echo ""
+
+${SSH_CMD} "
+cd ${DEPLOY_PATH}/current/backend
+
+# Create logs directory if missing
+mkdir -p logs
+
+# Load environment
+set -a
+source ${DEPLOY_PATH}/shared/.env
+set +a
+
+# Set RELEASE_COOKIE if not set
+export RELEASE_COOKIE=\${RELEASE_COOKIE:-assetronics_cookie_$(openssl rand -hex 32)}
+
+echo 'Environment loaded. Starting application...'
+echo ''
+
+# Start in foreground
+_build/prod/rel/assetronics/bin/assetronics start
+"

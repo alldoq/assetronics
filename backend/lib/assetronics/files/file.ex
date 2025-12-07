@@ -77,6 +77,8 @@ defmodule Assetronics.Files.File do
     # Associations
     belongs_to :uploaded_by, User
     belongs_to :asset, Asset
+    belongs_to :employee, Assetronics.Employees.Employee
+    belongs_to :workflow, Assetronics.Workflows.Workflow
     # TODO: Uncomment when WorkflowExecution schema is created
     # belongs_to :workflow_execution, WorkflowExecution
 
@@ -108,6 +110,8 @@ defmodule Assetronics.Files.File do
       :metadata,
       :uploaded_by_id,
       :asset_id,
+      :employee_id,
+      :workflow_id,
       # :workflow_execution_id,  # TODO: Uncomment when WorkflowExecution exists
       :attachable_type,
       :attachable_id

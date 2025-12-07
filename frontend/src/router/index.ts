@@ -111,6 +111,24 @@ const router = createRouter({
       meta: { requiresAuth: true, title: 'Software Licenses' },
     },
     {
+      path: '/software/add',
+      name: 'add-software',
+      component: () => import('../views/AddSoftwareView.vue'),
+      meta: { requiresAuth: true, title: 'Add Software License' },
+    },
+    {
+      path: '/software/:id',
+      name: 'view-software',
+      component: () => import('../views/ViewSoftwareView.vue'),
+      meta: { requiresAuth: true, title: 'View License' },
+    },
+    {
+      path: '/software/:id/edit',
+      name: 'edit-software',
+      component: () => import('../views/EditSoftwareView.vue'),
+      meta: { requiresAuth: true, title: 'Edit License' },
+    },
+    {
       path: '/workflows',
       name: 'workflows',
       component: () => import('../views/WorkflowsView.vue'),

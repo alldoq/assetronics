@@ -184,7 +184,102 @@ defmodule Assetronics.Files do
         where: f.category == "asset_photo" and f.asset_id == ^asset_id,
         order_by: [desc: f.inserted_at]
 
-    Repo.all(tenant, prefix: Triplex.to_prefix(query))
+    Repo.all(query, prefix: Triplex.to_prefix(tenant))
+  end
+
+  @doc """
+  Uploads a document for an employee (resume, ID, etc).
+  """
+  def upload_employee_document(tenant, employee_id, upload, uploaded_by_id, category \\ "document") do
+    upload_file(tenant, upload, %{
+      category: category,
+      uploaded_by_id: uploaded_by_id,
+      employee_id: employee_id,
+      attachable_type: "Employee",
+      attachable_id: employee_id
+    })
+  end
+
+  @doc """
+  Gets all documents for an employee.
+  """
+  def get_employee_documents(tenant, employee_id) do
+    query =
+      from f in File,
+        where: f.employee_id == ^employee_id,
+        order_by: [desc: f.inserted_at]
+
+    Repo.all(query, prefix: Triplex.to_prefix(tenant))
+  end
+
+  @doc """
+  Deletes all files attached to an employee.
+  """
+  def delete_employee_files(tenant, employee_id) do
+    query =
+      from f in File,
+        where: f.employee_id == ^employee_id
+
+    files = Repo.all(query, prefix: Triplex.to_prefix(tenant))
+
+    Enum.each(files, fn file ->
+      delete_file(tenant, file)
+    end)
+  end
+
+  @doc """
+  Uploads an attachment for a workflow.
+  """
+  def upload_workflow_document(tenant, workflow_id, upload, uploaded_by_id) do
+    upload_file(tenant, upload, %{
+      category: "attachment",
+      uploaded_by_id: uploaded_by_id,
+      workflow_id: workflow_id,
+      attachable_type: "Workflow",
+      attachable_id: workflow_id
+    })
+  end
+
+  @doc """
+  Gets all attachments for a workflow.
+  """
+  def get_workflow_documents(tenant, workflow_id) do
+    query =
+      from f in File,
+        where: f.workflow_id == ^workflow_id,
+        order_by: [desc: f.inserted_at]
+
+    Repo.all(query, prefix: Triplex.to_prefix(tenant))
+  end
+
+  @doc """
+  Deletes all files attached to a workflow.
+  """
+  def delete_workflow_files(tenant, workflow_id) do
+    query =
+      from f in File,
+        where: f.workflow_id == ^workflow_id
+
+    files = Repo.all(query, prefix: Triplex.to_prefix(tenant))
+
+    Enum.each(files, fn file ->
+      delete_file(tenant, file)
+    end)
+  end
+
+  @doc """
+  Deletes all files attached to an asset.
+  """
+  def delete_asset_files(tenant, asset_id) do
+    query =
+      from f in File,
+        where: f.asset_id == ^asset_id
+
+    files = Repo.all(query, prefix: Triplex.to_prefix(tenant))
+
+    Enum.each(files, fn file ->
+      delete_file(tenant, file)
+    end)
   end
 
   # Private functions

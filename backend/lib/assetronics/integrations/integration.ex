@@ -17,13 +17,13 @@ defmodule Assetronics.Integrations.Integration do
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
 
-  @integration_types ~w(hris finance itsm mdm procurement communication shipping email other)
+  @integration_types ~w(hris finance itsm mdm procurement communication shipping email identity other)
   @providers ~w(
-    bamboohr rippling gusto adp
+    bamboohr okta gusto adp
     netsuite quickbooks xero sage_intacct
     servicenow jira freshservice
     jamf intune google_workspace
-    dell coupa ariba
+    precoro procurify
     slack teams
     gmail microsoft_graph
     fedex ups dhl

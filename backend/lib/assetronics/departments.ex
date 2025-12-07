@@ -87,6 +87,38 @@ defmodule Assetronics.Departments do
   end
 
   @doc """
+  Gets a department by normalized name or creates it if it doesn't exist.
+
+  Normalizes the name by trimming whitespace and converting to title case
+  to prevent duplicates like "Engineering" vs "engineering" vs "  engineering  ".
+
+  ## Examples
+
+      iex> get_or_create_department("acme", "Engineering")
+      {:ok, %Department{name: "Engineering"}}
+
+      iex> get_or_create_department("acme", "  engineering  ")
+      {:ok, %Department{name: "Engineering"}}  # Same department as above
+
+  """
+  def get_or_create_department(tenant, name) when is_binary(name) do
+    normalized_name = normalize_name(name)
+
+    # Try to find existing department (case-insensitive)
+    query = from d in Department,
+      where: fragment("LOWER(?)", d.name) == ^String.downcase(normalized_name)
+
+    case Repo.one(query, prefix: Triplex.to_prefix(tenant)) do
+      nil ->
+        # Create new department with normalized name
+        create_department(tenant, %{name: normalized_name})
+
+      existing ->
+        {:ok, existing}
+    end
+  end
+
+  @doc """
   Creates a department.
 
   ## Examples
@@ -176,6 +208,14 @@ defmodule Assetronics.Departments do
   end
 
   # Private functions
+
+  defp normalize_name(name) when is_binary(name) do
+    name
+    |> String.trim()
+    |> String.split(~r/\s+/)
+    |> Enum.map(&String.capitalize/1)
+    |> Enum.join(" ")
+  end
 
   defp validate_no_circular_reference(changeset, tenant) do
     # Check if setting a parent would create a circular reference

@@ -38,8 +38,8 @@ defmodule Assetronics.Integrations.Adapter do
   def get_adapter("mdm", "google_workspace"), do: Assetronics.Integrations.Adapters.GoogleWorkspace
   def get_adapter("email", "gmail"), do: Assetronics.Integrations.Adapters.Gmail
   def get_adapter("email", "microsoft_graph"), do: Assetronics.Integrations.Adapters.MicrosoftGraph
-  def get_adapter("procurement", "dell"), do: Assetronics.Integrations.Adapters.Dell
-  def get_adapter("procurement", "cdw"), do: Assetronics.Integrations.Adapters.Cdw
+  def get_adapter("procurement", "precoro"), do: Assetronics.Integrations.Adapters.Precoro
+  def get_adapter("procurement", "procurify"), do: Assetronics.Integrations.Adapters.Procurify
   def get_adapter(_type, _provider), do: nil
 
   @doc """

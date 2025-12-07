@@ -87,6 +87,38 @@ defmodule Assetronics.Organizations do
   end
 
   @doc """
+  Gets an organization by normalized name or creates it if it doesn't exist.
+
+  Normalizes the name by trimming whitespace and converting to title case
+  to prevent duplicates like "IT Department" vs "IT department" vs "it department".
+
+  ## Examples
+
+      iex> get_or_create_organization("acme", "IT Department")
+      {:ok, %Organization{name: "IT Department"}}
+
+      iex> get_or_create_organization("acme", "  it department  ")
+      {:ok, %Organization{name: "IT Department"}}  # Same organization as above
+
+  """
+  def get_or_create_organization(tenant, name) when is_binary(name) do
+    normalized_name = normalize_name(name)
+
+    # Try to find existing organization (case-insensitive)
+    query = from o in Organization,
+      where: fragment("LOWER(?)", o.name) == ^String.downcase(normalized_name)
+
+    case Repo.one(query, prefix: Triplex.to_prefix(tenant)) do
+      nil ->
+        # Create new organization with normalized name
+        create_organization(tenant, %{name: normalized_name})
+
+      existing ->
+        {:ok, existing}
+    end
+  end
+
+  @doc """
   Creates an organization.
 
   ## Examples
@@ -176,6 +208,14 @@ defmodule Assetronics.Organizations do
   end
 
   # Private functions
+
+  defp normalize_name(name) when is_binary(name) do
+    name
+    |> String.trim()
+    |> String.split(~r/\s+/)
+    |> Enum.map(&String.capitalize/1)
+    |> Enum.join(" ")
+  end
 
   defp validate_no_circular_reference(changeset, tenant) do
     # Check if setting a parent would create a circular reference

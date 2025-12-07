@@ -15,6 +15,7 @@ defmodule Assetronics.Workflows do
   alias Assetronics.Workflows.Templates
   alias Assetronics.Accounts
   alias Assetronics.Notifications
+  alias Assetronics.Files
 
   require Logger
 
@@ -129,6 +130,9 @@ defmodule Assetronics.Workflows do
 
   """
   def delete_workflow(tenant, %Workflow{} = workflow) do
+    # Delete all associated files before deleting the workflow
+    Files.delete_workflow_files(tenant, workflow.id)
+
     Repo.delete(workflow, prefix: Triplex.to_prefix(tenant))
   end
 
@@ -382,6 +386,7 @@ defmodule Assetronics.Workflows do
     steps = [
       %{name: "Create accounts", status: "pending", completed_at: nil},
       %{name: "Assign hardware", status: "pending", completed_at: nil},
+      %{name: "Provision software licenses", status: "pending", completed_at: nil},
       %{name: "Setup software", status: "pending", completed_at: nil},
       %{name: "Send welcome email", status: "pending", completed_at: nil}
     ]
@@ -415,6 +420,7 @@ defmodule Assetronics.Workflows do
 
     steps = [
       %{name: "Collect hardware", status: "pending", completed_at: nil},
+      %{name: "Revoke software licenses", status: "pending", completed_at: nil},
       %{name: "Revoke access", status: "pending", completed_at: nil},
       %{name: "Export data", status: "pending", completed_at: nil},
       %{name: "Final checklist", status: "pending", completed_at: nil}

@@ -25,6 +25,11 @@ defmodule AssetronicsWeb.Router do
     plug AssetronicsWeb.Plugs.TenantResolver
   end
 
+  pipeline :webhook do
+    plug :accepts, ["json"]
+    plug AssetronicsWeb.Plugs.CaptureRawBody
+  end
+
   # Landing page route
   scope "/", AssetronicsWeb do
     pipe_through :browser
@@ -40,15 +45,22 @@ defmodule AssetronicsWeb.Router do
     post "/scan", AgentController, :scan
   end
 
+  # Webhook routes (with raw body capture)
+  scope "/api/v1", AssetronicsWeb do
+    pipe_through :webhook
+
+    post "/webhooks/bamboohr", WebhookController, :bamboohr
+    post "/webhooks/jamf", WebhookController, :jamf
+    post "/webhooks/okta", WebhookController, :okta
+    post "/webhooks/precoro", WebhookController, :precoro
+  end
+
   # Public API routes (no authentication required)
   scope "/api/v1", AssetronicsWeb do
     pipe_through :api
 
     # OAuth Callbacks
     get "/oauth/callback", OAuthController, :callback
-
-    # Webhooks
-    post "/webhooks/bamboohr", WebhookController, :bamboohr
 
     # Health check
     get "/health", HealthController, :index

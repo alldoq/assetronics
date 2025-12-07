@@ -8,7 +8,6 @@
            <svg v-if="props.provider === 'intune'" class="w-8 h-8 text-blue-600" viewBox="0 0 24 24" fill="currentColor"><path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4h-13.051M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801"/></svg>
            <svg v-else-if="props.provider === 'jamf'" class="w-8 h-8 text-slate-800" viewBox="0 0 24 24" fill="currentColor"><path d="M17.05 20.28c-.98.95-2.05.88-3.08.35-1.09-.56-2.18-.48-3.15.05-1.04.56-1.81.98-2.91.05-2.6-2.28-4.27-9.01-1.62-11.71 1.55-1.58 4.34-1.72 5.83-.35.33.28.67.53 1 .8.34-.27.67-.52 1-.8 1.49-1.37 4.28-1.23 5.83.35 1.13 1.16 2.06 3.01 2.06 3.07 0 .09-.09.28-.21.32-2.93 1.19-3.69 4.86-1.51 7.13.1.1.23.23.33.33-.26.68-.52 1.37-.78 2.05-.34.92-.99 1.83-1.8 2.31zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/></svg>
            <svg v-else-if="props.provider === 'okta'" class="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
-           <svg v-else-if="props.provider === 'dell'" class="w-8 h-8 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
            <svg v-else-if="props.provider === 'bamboohr'" class="w-8 h-8 text-accent-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
            <svg v-else-if="props.provider === 'google_workspace'" class="w-8 h-8 text-blue-600" viewBox="0 0 24 24" fill="currentColor"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
            <svg v-else class="w-8 h-8 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
@@ -183,6 +182,85 @@
               required
             >
           </div>
+        </div>
+
+        <!-- Okta API Token Setup -->
+        <div v-else-if="provider === 'okta'">
+          <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+            <p class="text-xs text-blue-800 mb-2">
+              <strong>How to get your Okta API Token:</strong>
+            </p>
+            <ol class="text-xs text-blue-800 ml-4 space-y-1 list-decimal">
+              <li>Log into your Okta Admin Console</li>
+              <li>Navigate to <strong>Security → API → Tokens</strong></li>
+              <li>Click <strong>"Create Token"</strong></li>
+              <li>Give it a name (e.g., "Assetronics Integration")</li>
+              <li>Click <strong>"Create Token"</strong> and copy it immediately</li>
+              <li><strong class="text-red-700">⚠️ Important:</strong> Save the token now - you won't be able to see it again!</li>
+            </ol>
+            <p class="text-xs text-blue-600 mt-2">
+              💡 The token will look like: <code class="bg-blue-100 px-1 py-0.5 rounded">00abcdefghijklmnopqrstuvwxyz1234567890ABCD</code>
+            </p>
+          </div>
+
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-2">
+                Okta Domain
+                <span class="text-xs font-normal text-slate-500 ml-1">(without https://)</span>
+              </label>
+              <input
+                v-model="form.base_url"
+                type="text"
+                class="w-full px-4 py-3 text-base rounded-md border border-slate-300 shadow-sm focus:border-accent-blue focus:ring-2 focus:ring-accent-blue focus:outline-none"
+                placeholder="dev-12345.okta.com or yourcompany.okta.com"
+                required
+              >
+              <p class="text-xs text-slate-500 mt-1">
+                Find this in your browser's address bar when logged into Okta
+              </p>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-2">API Token (SSWS)</label>
+              <input
+                v-model="form.api_key"
+                type="password"
+                class="w-full px-4 py-3 text-base rounded-md border border-slate-300 shadow-sm focus:border-accent-blue focus:ring-2 focus:ring-accent-blue focus:outline-none"
+                placeholder="00abcdefghijklmnopqrstuvwxyz1234567890ABCD"
+                required
+              >
+              <p class="text-xs text-slate-500 mt-1">
+                Your API token will be encrypted and stored securely
+              </p>
+            </div>
+          </div>
+
+          <!-- Webhook Setup Instructions (Collapsible) -->
+          <details class="mt-4">
+            <summary class="cursor-pointer text-sm font-medium text-accent-blue hover:text-blue-700 flex items-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Optional: Set up real-time sync with Okta Event Hooks
+            </summary>
+            <div class="mt-3 p-3 bg-slate-50 border border-slate-200 rounded-md">
+              <p class="text-xs text-slate-700 mb-2">
+                <strong>For real-time employee updates, configure an Event Hook in Okta:</strong>
+              </p>
+              <ol class="text-xs text-slate-600 ml-4 space-y-1 list-decimal">
+                <li>Go to Okta Admin Console → <strong>Workflow → Event Hooks</strong></li>
+                <li>Click <strong>"Create Event Hook"</strong></li>
+                <li>Name: "Assetronics Sync"</li>
+                <li>URL: <code class="bg-slate-100 px-1 py-0.5 rounded text-xs">https://your-domain.com/api/v1/webhooks/okta?tenant=your_tenant</code></li>
+                <li>Subscribe to <strong>User Lifecycle Events</strong> (create, activate, deactivate, etc.)</li>
+                <li>Click <strong>"Verify"</strong> to complete setup</li>
+              </ol>
+              <p class="text-xs text-slate-500 mt-2 italic">
+                This enables automatic sync when users are created, updated, or deactivated in Okta
+              </p>
+            </div>
+          </details>
         </div>
 
         <!-- OAuth Credentials (Intune, Dell, Jamf) -->
@@ -364,15 +442,16 @@ const providerName = computed(() => {
     intune: 'Microsoft Intune',
     jamf: 'Jamf Pro',
     okta: 'Okta',
-    dell: 'Dell Premier',
     bamboohr: 'BambooHR',
-    google_workspace: 'Google Workspace'
+    google_workspace: 'Google Workspace',
+    precoro: 'Precoro',
+    procurify: 'Procurify'
   }
   return names[props.provider] || props.provider
 })
 
-const isOAuthProvider = computed(() => ['intune', 'dell', 'bamboohr', 'jamf'].includes(props.provider))
-const hasBaseUrl = computed(() => !['dell', 'intune', 'google_workspace'].includes(props.provider)) // BambooHR and Jamf need base_url, others don't
+const isOAuthProvider = computed(() => ['intune', 'bamboohr', 'jamf', 'procurify'].includes(props.provider))
+const hasBaseUrl = computed(() => !['intune', 'google_workspace'].includes(props.provider)) // BambooHR and Jamf need base_url, others don't
 const needsSecret = computed(() => false) // No providers use api_secret anymore
 
 const apiKeyLabel = computed(() => {
@@ -384,7 +463,6 @@ const apiKeyLabel = computed(() => {
 
 const apiSecretLabel = computed(() => {
   if (props.provider === 'jamf') return 'Password'
-  if (props.provider === 'dell') return 'Client Secret'
   return 'Secret'
 })
 
@@ -397,7 +475,6 @@ const baseUrlPlaceholder = computed(() => {
 
 const getOAuthSetupTitle = () => {
   if (props.provider === 'intune') return 'Azure AD'
-  if (props.provider === 'dell') return 'Dell Premier'
   if (props.provider === 'bamboohr') return 'BambooHR'
   if (props.provider === 'jamf') return 'Jamf Pro'
   return 'OAuth'
@@ -406,9 +483,6 @@ const getOAuthSetupTitle = () => {
 const getOAuthSetupInstructions = () => {
   if (props.provider === 'intune') {
     return 'Register your app at portal.azure.com. Required permissions: DeviceManagementManagedDevices.Read.All, User.Read.All'
-  }
-  if (props.provider === 'dell') {
-    return 'Contact Dell to obtain OAuth credentials for Dell Premier API access.'
   }
   if (props.provider === 'bamboohr') {
     return 'Go to BambooHR Settings → API Keys to generate your Client ID and Client Secret for API access.'
@@ -421,7 +495,6 @@ const getOAuthSetupInstructions = () => {
 
 const getClientIdPlaceholder = () => {
   if (props.provider === 'intune') return 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
-  if (props.provider === 'dell') return 'your-dell-client-id'
   if (props.provider === 'bamboohr') return 'your-bamboohr-client-id'
   return 'your-client-id'
 }
@@ -715,8 +788,9 @@ const getSyncStatusClass = () => {
 const getIntegrationType = (p: string) => {
   if (['intune', 'jamf', 'google_workspace'].includes(p)) return 'mdm'
   if (p === 'okta') return 'identity'
-  if (p === 'dell') return 'procurement'
   if (p === 'bamboohr') return 'hris'
+  if (p === 'precoro') return 'procurement'
+  if (p === 'procurify') return 'procurement'
   return 'other'
 }
 
@@ -724,9 +798,10 @@ const getAuthType = (p: string) => {
   if (p === 'intune') return 'oauth2' // Microsoft OAuth 2.0
   if (p === 'okta') return 'api_key' // SSWS
   if (p === 'jamf') return 'oauth2' // Jamf OAuth 2.0 Client Credentials
-  if (p === 'dell') return 'oauth2' // Client Credentials
   if (p === 'bamboohr') return 'api_key' // BambooHR API Key (OAuth doesn't work for API access)
   if (p === 'google_workspace') return 'custom' // Google Workspace uses Service Account
+  if (p === 'precoro') return 'api_key' // Precoro API Key (X-AUTH-TOKEN)
+  if (p === 'procurify') return 'oauth2' // Procurify OAuth 2.0 Client Credentials
   return 'api_key'
 }
 </script>

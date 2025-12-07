@@ -14,6 +14,7 @@ defmodule Assetronics.Employees do
   alias Assetronics.Employees.Employee
   alias Assetronics.Accounts
   alias Assetronics.Notifications
+  alias Assetronics.Files
 
   require Logger
 
@@ -147,6 +148,9 @@ defmodule Assetronics.Employees do
 
   """
   def delete_employee(tenant, %Employee{} = employee) do
+    # Delete all associated files before deleting the employee
+    Files.delete_employee_files(tenant, employee.id)
+
     Repo.delete(employee, prefix: Triplex.to_prefix(tenant))
   end
 

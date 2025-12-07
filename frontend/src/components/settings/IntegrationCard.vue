@@ -25,7 +25,7 @@
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
       </svg>
 
-      <!-- Truck / Dell -->
+      <!-- Truck / Procurement -->
       <svg v-if="icon === 'truck'" class="w-8 h-8 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h9zm0 0h5.5a2.5 2.5 0 010 5M13 16l5-8h4l2 8h-6m-2 0a2 2 0 100 4 2 2 0 000-4zM5 18a2 2 0 100 4 2 2 0 000-4z" />
       </svg>

@@ -1,0 +1,142 @@
+#!/bin/bash
+# Debug deployment script
+
+DEPLOY_PATH="${DEPLOY_PATH:-/home/marcin/assetronics}"
+CURRENT_PATH="${DEPLOY_PATH}/current"
+
+echo "=== Deployment Debug Information ==="
+echo ""
+
+# Check if current symlink exists
+echo "1. Checking deployment structure..."
+if [ -L "$CURRENT_PATH" ]; then
+    echo "✓ Current symlink exists: $CURRENT_PATH -> $(readlink $CURRENT_PATH)"
+else
+    echo "✗ Current symlink does not exist at $CURRENT_PATH"
+    exit 1
+fi
+
+# Check release binary
+echo ""
+echo "2. Checking release binary..."
+RELEASE_BIN="${CURRENT_PATH}/backend/_build/prod/rel/assetronics/bin/assetronics"
+if [ -f "$RELEASE_BIN" ]; then
+    echo "✓ Release binary exists: $RELEASE_BIN"
+    echo "  Permissions: $(ls -la $RELEASE_BIN | awk '{print $1, $3, $4}')"
+else
+    echo "✗ Release binary not found at $RELEASE_BIN"
+    echo ""
+    echo "Available files in _build/prod/rel:"
+    ls -la "${CURRENT_PATH}/backend/_build/prod/rel/" 2>/dev/null || echo "Directory not found"
+    exit 1
+fi
+
+# Check .env file
+echo ""
+echo "3. Checking environment configuration..."
+ENV_FILE="${DEPLOY_PATH}/shared/.env"
+if [ -f "$ENV_FILE" ]; then
+    echo "✓ .env file exists: $ENV_FILE"
+    echo "  Size: $(wc -l < $ENV_FILE) lines"
+    echo ""
+    echo "  Environment variables (values hidden):"
+    grep -v '^#' "$ENV_FILE" | grep -v '^$' | sed 's/=.*/=***/' || echo "  (file is empty or only contains comments)"
+else
+    echo "✗ .env file not found at $ENV_FILE"
+    echo ""
+    echo "  Creating sample .env file..."
+    cat > "$ENV_FILE" << 'EOF'
+DATABASE_URL=ecto://postgres:postgres@localhost:5433/assetronics_prod
+SECRET_KEY_BASE=CHANGE_ME_TO_A_REAL_SECRET_KEY_BASE_MINIMUM_64_CHARACTERS_LONG
+RELEASE_COOKIE=CHANGE_ME_TO_A_RANDOM_COOKIE
+CLOAK_KEY=CHANGE_ME_TO_A_RANDOM_CLOAK_KEY
+PHX_HOST=localhost
+PORT=4025
+PHX_SERVER=true
+MIX_ENV=prod
+EOF
+    echo "✓ Sample .env file created. Please edit it with your configuration:"
+    echo "  nano $ENV_FILE"
+    exit 1
+fi
+
+# Check logs directory
+echo ""
+echo "4. Checking logs directory..."
+LOGS_DIR="${CURRENT_PATH}/backend/logs"
+if [ ! -d "$LOGS_DIR" ]; then
+    echo "  Creating logs directory: $LOGS_DIR"
+    mkdir -p "$LOGS_DIR"
+fi
+echo "✓ Logs directory: $LOGS_DIR"
+
+# Try to get current status
+echo ""
+echo "5. Checking application status..."
+cd "${CURRENT_PATH}/backend"
+
+# Load environment
+if [ -f "$ENV_FILE" ]; then
+    set -a
+    source "$ENV_FILE"
+    set +a
+fi
+
+# Check if app is running
+if "$RELEASE_BIN" pid >/dev/null 2>&1; then
+    PID=$("$RELEASE_BIN" pid 2>&1)
+    echo "✓ Application is running (PID: $PID)"
+
+    # Check if listening on port
+    if lsof -ti :${PORT:-4025} >/dev/null 2>&1; then
+        echo "✓ Application is listening on port ${PORT:-4025}"
+    else
+        echo "⚠ Application is running but not listening on port ${PORT:-4025}"
+    fi
+else
+    echo "✗ Application is not running"
+fi
+
+echo ""
+echo "6. Database connectivity test..."
+if [ -n "$DATABASE_URL" ]; then
+    # Extract database info from URL
+    echo "  DATABASE_URL is set"
+
+    # Try to connect using psql if available
+    if command -v psql >/dev/null 2>&1; then
+        if psql "$DATABASE_URL" -c "SELECT 1;" >/dev/null 2>&1; then
+            echo "✓ Database connection successful"
+        else
+            echo "✗ Cannot connect to database"
+            echo "  Make sure PostgreSQL is running and credentials are correct"
+        fi
+    else
+        echo "  (psql not available, skipping connection test)"
+    fi
+else
+    echo "✗ DATABASE_URL not set in .env"
+fi
+
+echo ""
+echo "=== Manual Commands ==="
+echo ""
+echo "To start the application in foreground (see errors):"
+echo "  cd ${CURRENT_PATH}/backend"
+echo "  source ${ENV_FILE}"
+echo "  ${RELEASE_BIN} start"
+echo ""
+echo "To see recent logs:"
+echo "  tail -f ${LOGS_DIR}/phoenix.log"
+echo ""
+echo "To run database migrations:"
+echo "  cd ${CURRENT_PATH}/backend"
+echo "  source ${ENV_FILE}"
+echo "  MIX_ENV=prod mix ecto.migrate"
+echo ""
+echo "To start as daemon:"
+echo "  ${RELEASE_BIN} daemon"
+echo ""
+echo "To stop the application:"
+echo "  ${RELEASE_BIN} stop"
+echo ""

@@ -16,6 +16,8 @@ defmodule Assetronics.Assets do
   alias Assetronics.Accounts
   alias Assetronics.Notifications
   alias Assetronics.Workflows
+  alias Assetronics.Software
+  alias Assetronics.Files
 
   require Logger
 
@@ -160,6 +162,9 @@ defmodule Assetronics.Assets do
 
   """
   def delete_asset(tenant, %Asset{} = asset) do
+    # Delete all associated files before deleting the asset
+    Files.delete_asset_files(tenant, asset.id)
+
     Repo.delete(asset, prefix: Triplex.to_prefix(tenant))
   end
 
@@ -242,6 +247,25 @@ defmodule Assetronics.Assets do
           {:error, reason} ->
             Logger.error("Failed to create onboarding workflow: #{inspect(reason)}")
         end
+      end
+
+      # Auto-provision software licenses if specified
+      license_ids = Keyword.get(opts, :license_ids, [])
+      if length(license_ids) > 0 do
+        Logger.info("Auto-provisioning #{length(license_ids)} software licenses for employee #{employee.id}")
+
+        Enum.each(license_ids, fn license_id ->
+          case Software.assign_software(tenant, employee.id, license_id, %{
+            assigned_at: Date.utc_today(),
+            status: "active"
+          }) do
+            {:ok, _assignment} ->
+              Logger.info("Assigned license #{license_id} to employee #{employee.id}")
+
+            {:error, reason} ->
+              Logger.warning("Failed to assign license #{license_id}: #{inspect(reason)}")
+          end
+        end)
       end
 
       updated_asset

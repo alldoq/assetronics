@@ -117,18 +117,8 @@
               @configure="openConfig('bamboohr')"
             />
             <IntegrationCard
-              name="Rippling"
-              description="Sync employee data, payroll, and benefits information."
-              provider="rippling"
-              type="hris"
-              icon="user-group"
-              :status="getIntegrationStatus('rippling')"
-              :last-sync="getIntegration('rippling')?.last_sync_at"
-              @configure="openConfig('rippling')"
-            />
-            <IntegrationCard
               name="Okta"
-              description="Sync employees and track SaaS application access."
+              description="Sync users from Okta identity platform and manage employee lifecycle."
               provider="okta"
               type="hris"
               icon="shield"
@@ -149,24 +139,24 @@
           </h2>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <IntegrationCard
-              name="Dell Premier"
-              description="Sync order history and track shipments automatically."
-              provider="dell"
+              name="Precoro"
+              description="Sync purchase orders and automate procurement workflows."
+              provider="precoro"
               type="procurement"
               icon="truck"
-              :status="getIntegrationStatus('dell')"
-              :last-sync="getIntegration('dell')?.last_sync_at"
-              @configure="openConfig('dell')"
+              :status="getIntegrationStatus('precoro')"
+              :last-sync="getIntegration('precoro')?.last_sync_at"
+              @configure="openConfig('precoro')"
             />
             <IntegrationCard
-              name="CDW"
-              description="Import purchase orders and track hardware deliveries."
-              provider="cdw"
+              name="Procurify"
+              description="Import purchase orders and track procurement data."
+              provider="procurify"
               type="procurement"
               icon="truck"
-              :status="getIntegrationStatus('cdw')"
-              :last-sync="getIntegration('cdw')?.last_sync_at"
-              @configure="openConfig('cdw')"
+              :status="getIntegrationStatus('procurify')"
+              :last-sync="getIntegration('procurify')?.last_sync_at"
+              @configure="openConfig('procurify')"
             />
           </div>
         </section>
@@ -295,14 +285,14 @@ const loadingIntegrations = ref(true)
 const providerNames: Record<string, string> = {
   intune: 'Microsoft Intune',
   jamf: 'Jamf Pro',
-  dell: 'Dell Premier',
   bamboohr: 'BambooHR',
-  rippling: 'Rippling',
   okta: 'Okta',
   quickbooks: 'QuickBooks',
   netsuite: 'NetSuite',
   slack: 'Slack',
-  google_workspace: 'Google Workspace'
+  google_workspace: 'Google Workspace',
+  precoro: 'Precoro',
+  procurify: 'Procurify'
 }
 
 const successProviderName = computed(() => {
