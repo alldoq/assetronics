@@ -51,6 +51,7 @@ defmodule AssetronicsWeb.Router do
 
     post "/webhooks/bamboohr", WebhookController, :bamboohr
     post "/webhooks/jamf", WebhookController, :jamf
+    get "/webhooks/okta", WebhookController, :okta_verify
     post "/webhooks/okta", WebhookController, :okta
     post "/webhooks/precoro", WebhookController, :precoro
   end
@@ -120,9 +121,11 @@ defmodule AssetronicsWeb.Router do
       get "/history", AssetController, :history
       post "/photos", FileController, :upload_asset_photo
       get "/transactions", TransactionController, :asset_transactions
+      get "/label", AssetController, :label
     end
 
     get "/assets/search", AssetController, :search
+    post "/assets/batch-labels", AssetController, :batch_labels
 
     # Transactions
     resources "/transactions", TransactionController, only: [:index, :show]

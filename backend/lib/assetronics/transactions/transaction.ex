@@ -107,8 +107,6 @@ defmodule Assetronics.Transactions.Transaction do
       :transaction_type,
       :asset_id,
       :employee_id,
-      :workflow_id,
-      :integration_id,
       :description,
       :performed_by,
       :performed_at,
@@ -118,8 +116,6 @@ defmodule Assetronics.Transactions.Transaction do
     |> validate_inclusion(:transaction_type, @transaction_types)
     |> foreign_key_constraint(:asset_id)
     |> foreign_key_constraint(:employee_id)
-    |> foreign_key_constraint(:workflow_id)
-    |> foreign_key_constraint(:integration_id)
     |> put_default_performed_at()
   end
 

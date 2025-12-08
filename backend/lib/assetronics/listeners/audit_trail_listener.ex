@@ -125,11 +125,11 @@ defmodule Assetronics.Listeners.AuditTrailListener do
     create_audit_record(state.tenant, %{
       transaction_type: "workflow_created",
       description: "Workflow created: #{workflow.title}",
-      workflow_id: workflow.id,
       employee_id: workflow.employee_id,
       asset_id: workflow.asset_id,
       performed_by: workflow.triggered_by || "system",
       metadata: %{
+        workflow_id: workflow.id,
         workflow_type: workflow.workflow_type,
         status: workflow.status,
         priority: workflow.priority,
@@ -146,11 +146,11 @@ defmodule Assetronics.Listeners.AuditTrailListener do
     create_audit_record(state.tenant, %{
       transaction_type: "workflow_started",
       description: "Workflow started: #{workflow.title}",
-      workflow_id: workflow.id,
       employee_id: workflow.employee_id,
       asset_id: workflow.asset_id,
       performed_by: workflow.assigned_to || "system",
       metadata: %{
+        workflow_id: workflow.id,
         workflow_type: workflow.workflow_type,
         started_at: workflow.started_at
       }
@@ -164,11 +164,11 @@ defmodule Assetronics.Listeners.AuditTrailListener do
     create_audit_record(state.tenant, %{
       transaction_type: "workflow_completed",
       description: "Workflow completed: #{workflow.title}",
-      workflow_id: workflow.id,
       employee_id: workflow.employee_id,
       asset_id: workflow.asset_id,
       performed_by: workflow.assigned_to || "system",
       metadata: %{
+        workflow_id: workflow.id,
         workflow_type: workflow.workflow_type,
         completed_at: workflow.completed_at,
         duration_days: calculate_duration(workflow.started_at, workflow.completed_at)
@@ -185,11 +185,11 @@ defmodule Assetronics.Listeners.AuditTrailListener do
     create_audit_record(state.tenant, %{
       transaction_type: "workflow_step_advanced",
       description: "Workflow step advanced: #{workflow.title} -> #{current_step_name}",
-      workflow_id: workflow.id,
       employee_id: workflow.employee_id,
       asset_id: workflow.asset_id,
       performed_by: workflow.assigned_to || "system",
       metadata: %{
+        workflow_id: workflow.id,
         current_step: workflow.current_step,
         step_name: current_step_name
       }

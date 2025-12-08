@@ -165,6 +165,24 @@ defmodule AssetronicsWeb.WebhookController do
   end
 
   @doc """
+  Handles Okta event hook verification (GET request).
+
+  When you first register an event hook in Okta, it sends a GET request
+  with X-Okta-Verification-Challenge header that must be echoed back.
+  """
+  def okta_verify(conn, _params) do
+    verification_challenge = get_req_header(conn, "x-okta-verification-challenge") |> List.first()
+
+    if verification_challenge do
+      Logger.info("Received Okta verification challenge")
+      json(conn, %{"verification" => verification_challenge})
+    else
+      Logger.error("Okta verification request missing challenge header")
+      send_resp(conn, 400, "Missing verification challenge")
+    end
+  end
+
+  @doc """
   Receiver for Okta event hooks.
 
   Okta sends event hooks for user lifecycle events including:
@@ -181,55 +199,48 @@ defmodule AssetronicsWeb.WebhookController do
   def okta(conn, params) do
     tenant = conn.query_params["tenant"]
 
-    # Handle Okta's one-time verification challenge
-    verification_challenge = get_req_header(conn, "x-okta-verification-challenge") |> List.first()
-
-    if verification_challenge do
-      Logger.info("Received Okta verification challenge")
-      json(conn, %{"verification" => verification_challenge})
+    if is_nil(tenant) do
+      Logger.error("Okta event hook received without tenant identifier")
+      send_resp(conn, 400, "Missing tenant identifier")
     else
-      if is_nil(tenant) do
-        Logger.error("Okta event hook received without tenant identifier")
-        send_resp(conn, 400, "Missing tenant identifier")
-      else
-        case Integrations.get_integration_by_provider(tenant, "okta") do
-          nil ->
-            Logger.error("Okta event hook received for tenant #{tenant} but no integration found")
-            send_resp(conn, 404, "Integration not found")
+      case Integrations.get_integration_by_provider(tenant, "okta") do
+        {:error, :not_found} ->
+          Logger.error("Okta event hook received for tenant #{tenant} but no integration found")
+          send_resp(conn, 404, "Integration not found")
 
-          integration ->
-            # Verify event hook signature if configured
-            with :ok <- verify_okta_signature(conn, integration) do
-              Logger.info("Received Okta event hook for tenant #{tenant}")
+        {:ok, integration} ->
+          # Verify event hook signature if configured
+          with :ok <- verify_okta_signature(conn, integration) do
+            Logger.info("Received Okta event hook for tenant #{tenant}")
 
-              # Process event hook asynchronously
-              Task.start(fn ->
-                case OktaWebhook.process_webhook(tenant, params) do
-                  {:ok, result} ->
-                    Logger.info("Okta event hook processed successfully: #{inspect(result)}")
+            # Process event hook asynchronously
+            Task.start(fn ->
+              case OktaWebhook.process_webhook(tenant, params) do
+                {:ok, result} ->
+                  Logger.info("Okta event hook processed successfully: #{inspect(result)}")
 
-                  {:error, reason} ->
-                    Logger.error("Okta event hook processing failed: #{inspect(reason)}")
-                end
-              end)
+                {:error, reason} ->
+                  Logger.error("Okta event hook processing failed: #{inspect(reason)}")
+              end
+            end)
 
-              send_resp(conn, 200, "Event hook received")
-            else
-              {:error, :invalid_signature} ->
-                Logger.warning("Okta event hook signature verification failed for tenant #{tenant}")
-                send_resp(conn, 401, "Invalid signature")
+            send_resp(conn, 200, "Event hook received")
+          else
+            {:error, :invalid_signature} ->
+              Logger.warning("Okta event hook signature verification failed for tenant #{tenant}")
+              send_resp(conn, 401, "Invalid signature")
 
-              _ ->
-                send_resp(conn, 500, "Internal error")
-            end
-        end
+            _ ->
+              send_resp(conn, 500, "Internal error")
+          end
       end
     end
   end
 
   # Helper to verify Okta event hook signature
   defp verify_okta_signature(conn, integration) do
-    event_hook_secret = integration.auth_config["event_hook_secret"]
+    auth_config = integration.auth_config || %{}
+    event_hook_secret = auth_config["event_hook_secret"]
 
     if event_hook_secret do
       signature = get_req_header(conn, "x-okta-event-hook-signature") |> List.first()
@@ -282,11 +293,11 @@ defmodule AssetronicsWeb.WebhookController do
 
         :ok ->
           case Integrations.get_integration_by_provider(tenant, "precoro") do
-            nil ->
+            {:error, :not_found} ->
               Logger.error("Precoro webhook received for tenant #{tenant} but no integration found")
               send_resp(conn, 404, "Integration not found")
 
-            _integration ->
+            {:ok, _integration} ->
               event_type = "type_#{params["type"]}_action_#{params["action"]}"
               Logger.info("Received Precoro webhook for tenant #{tenant}: #{event_type}")
 

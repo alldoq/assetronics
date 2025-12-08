@@ -8,6 +8,7 @@ defmodule Assetronics.Integrations.Adapters.Okta.EmployeeSync do
 
   alias Assetronics.Employees
   alias Assetronics.Workflows
+  alias Assetronics.Settings
   alias Assetronics.Integrations.Adapters.Okta.DataMapper
 
   require Logger
@@ -102,45 +103,121 @@ defmodule Assetronics.Integrations.Adapters.Okta.EmployeeSync do
   end
 
   @doc """
-  Creates an onboarding workflow for new hires if applicable.
+  Creates appropriate workflow based on employee status.
 
-  Only creates workflows for employees hired within the last 30 days or in the future.
-  Uses the activated date if hire_date is not available.
+  - For active/pending employees hired within 30 days: creates onboarding workflow
+  - For terminated employees: creates offboarding workflow
+  - For on_leave employees: skips workflow creation
+  - Respects tenant settings for auto-creation
+
+  Returns true if a workflow was created, false otherwise.
   """
   def maybe_create_workflow(tenant, employee, user_data, integration) do
-    profile = user_data["profile"] || %{}
-    hire_date = DataMapper.parse_date(
-      DataMapper.get_value(profile, "hireDate") || user_data["activated"]
-    )
-    today = Date.utc_today()
+    with {:ok, settings} <- Settings.get_tenant_settings(tenant) do
+      # Determine which workflow to create based on employment status
+      case employee.employment_status do
+        status when status in ["active", "pending"] ->
+          maybe_create_onboarding_workflow(tenant, employee, user_data, integration, settings)
 
-    if hire_date do
-      diff = Date.diff(today, hire_date)
+        "terminated" ->
+          maybe_create_offboarding_workflow(tenant, employee, integration, settings)
 
-      Logger.debug("Checking workflow for #{employee.email}: Hire Date #{hire_date}, Today #{today}, Diff #{diff} days")
+        "on_leave" ->
+          Logger.debug("Skipping workflow for #{employee.email}: Employee is on leave")
+          false
 
-      # Only create workflow if hired in last 30 days (or future)
-      if diff <= 30 do
-        Logger.info("Creating onboarding workflow for #{employee.email} (Hired: #{hire_date})")
-        case Workflows.create_onboarding_workflow(tenant, employee, nil,
-              triggered_by: "hris_sync",
-              integration_id: integration.id) do
-          {:ok, _workflow} -> true
-          {:error, reason} ->
-            Logger.error("Failed to create workflow: #{inspect(reason)}")
-            false
-        end
-      else
-        Logger.debug("Skipping workflow: Hire date #{hire_date} is too old (> 30 days ago)")
-        false
+        _ ->
+          Logger.debug("Skipping workflow for #{employee.email}: Unknown employment status #{employee.employment_status}")
+          false
       end
     else
-      Logger.debug("Skipping workflow: No hire date found")
-      false
+      {:error, reason} ->
+        Logger.error("Failed to get tenant settings: #{inspect(reason)}")
+        false
     end
   end
 
   # Private functions
+
+  defp maybe_create_onboarding_workflow(tenant, employee, user_data, integration, settings) do
+    cond do
+      # Check if auto-create is enabled
+      not settings.workflow_auto_create_onboarding ->
+        Logger.debug("Skipping onboarding workflow: Auto-create disabled in settings")
+        false
+
+      # Check if employee was hired recently (within 30 days)
+      true ->
+        profile = user_data["profile"] || %{}
+        hire_date = DataMapper.parse_date(
+          DataMapper.get_value(profile, "hireDate") || user_data["activated"]
+        )
+        today = Date.utc_today()
+
+        cond do
+          is_nil(hire_date) ->
+            Logger.debug("Skipping onboarding workflow for #{employee.email}: No hire date found")
+            false
+
+          Date.diff(today, hire_date) > 30 ->
+            Logger.debug("Skipping onboarding workflow: Hire date #{hire_date} is too old (> 30 days ago)")
+            false
+
+          true ->
+            Logger.debug("Checking onboarding workflow for #{employee.email}: Hire Date #{hire_date}, Today #{today}, Diff #{Date.diff(today, hire_date)} days")
+
+            # Check if employee already has an onboarding workflow
+            existing_workflows = Workflows.list_workflows_for_employee(tenant, employee.id)
+            has_onboarding = Enum.any?(existing_workflows, fn w -> w.workflow_type == "onboarding" end)
+
+            if has_onboarding do
+              Logger.debug("Skipping onboarding workflow for #{employee.email}: Already has onboarding workflow")
+              false
+            else
+              # Create the workflow
+              Logger.info("Creating onboarding workflow for #{employee.email} (Hired: #{hire_date}, Status: #{employee.employment_status})")
+              case Workflows.create_onboarding_workflow(tenant, employee, nil,
+                    triggered_by: "hris_sync",
+                    integration_id: integration.id) do
+                {:ok, _workflow} -> true
+                {:error, reason} ->
+                  Logger.error("Failed to create onboarding workflow: #{inspect(reason)}")
+                  false
+              end
+            end
+        end
+    end
+  end
+
+  defp maybe_create_offboarding_workflow(tenant, employee, integration, settings) do
+    cond do
+      # Check if auto-create is enabled
+      not settings.workflow_auto_create_offboarding ->
+        Logger.debug("Skipping offboarding workflow: Auto-create disabled in settings")
+        false
+
+      # Check if employee already has an offboarding workflow
+      true ->
+        existing_workflows = Workflows.list_workflows_for_employee(tenant, employee.id)
+        has_offboarding = Enum.any?(existing_workflows, fn w -> w.workflow_type == "offboarding" end)
+
+        if has_offboarding do
+          Logger.debug("Skipping offboarding workflow for #{employee.email}: Already has offboarding workflow")
+          false
+        else
+          # Create the workflow
+          Logger.info("Creating offboarding workflow for #{employee.email} (Status: #{employee.employment_status})")
+          case Workflows.create_offboarding_workflow(tenant, employee,
+                triggered_by: "hris_sync",
+                integration_id: integration.id) do
+            {:ok, _workflow} -> true
+            {:error, reason} ->
+              Logger.error("Failed to create offboarding workflow: #{inspect(reason)}")
+              false
+          end
+        end
+    end
+  end
 
   defp terminate_employee(tenant, employee, user_data) do
     # Use statusChanged date if available, otherwise use today

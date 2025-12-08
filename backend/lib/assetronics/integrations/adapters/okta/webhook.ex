@@ -161,14 +161,44 @@ defmodule Assetronics.Integrations.Adapters.Okta.Webhook do
   end
 
   defp process_single_event(tenant, integration, %{"eventType" => event_type} = event) do
-    # Extract user ID from target
-    user_id = get_in(event, ["target", 0, "id"])
-
-    if is_nil(user_id) do
-      Logger.warning("No user ID found in event: #{inspect(event)}")
-      {:error, :no_user_id}
+    # Ignore .initiated events as they often lack complete user info
+    # We'll process the completed event instead
+    if String.ends_with?(event_type, ".initiated") do
+      Logger.info("Ignoring #{event_type} - will process when completed")
+      {:ok, %{action: :ignored, event_type: event_type, reason: "initiated_event"}}
     else
-      case event_type do
+      # Extract user ID from target (target is a list, get first element)
+      # For some events, target may be nil - try actor as fallback
+      user_id =
+        event
+        |> Map.get("target", [])
+        |> List.first()
+        |> case do
+          nil ->
+            # Try to get from actor for events where target is nil
+            event
+            |> Map.get("actor", %{})
+            |> Map.get("id")
+
+          target ->
+            Map.get(target, "id")
+        end
+
+      if is_nil(user_id) do
+        Logger.warning(
+          "No user ID found in event (type: #{event_type}). " <>
+            "Target: #{inspect(event["target"])}, Actor: #{inspect(event["actor"])}"
+        )
+
+        {:error, :no_user_id}
+      else
+        process_user_event(tenant, integration, event_type, user_id)
+      end
+    end
+  end
+
+  defp process_user_event(tenant, integration, event_type, user_id) do
+    case event_type do
         "user.lifecycle.create" ->
           handle_user_created(tenant, integration, user_id)
 
@@ -190,7 +220,6 @@ defmodule Assetronics.Integrations.Adapters.Okta.Webhook do
         _ ->
           Logger.warning("Unknown Okta event type: #{event_type}")
           {:ok, %{action: :ignored, event_type: event_type}}
-      end
     end
   end
 

@@ -3,6 +3,7 @@ defmodule AssetronicsWeb.AssetController do
 
   alias Assetronics.Assets
   alias Assetronics.Assets.Asset
+  alias Assetronics.Labels.LabelGenerator
 
   action_fallback AssetronicsWeb.FallbackController
 
@@ -201,6 +202,53 @@ defmodule AssetronicsWeb.AssetController do
 
     result = Assets.search_assets(tenant, search_params)
     render(conn, :index, result: result)
+  end
+
+  @doc """
+  Generates a printable label with QR code for an asset.
+
+  GET /api/v1/assets/:asset_id/label
+  """
+  def label(conn, %{"asset_id" => id}) do
+    with :ok <- validate_uuid(id) do
+      tenant = conn.assigns[:tenant]
+      asset = Assets.get_asset!(tenant, id)
+
+      case LabelGenerator.generate_label(tenant, asset) do
+        {:ok, label_data} ->
+          json(conn, %{data: label_data})
+
+        {:error, reason} ->
+          conn
+          |> put_status(:internal_server_error)
+          |> json(%{error: reason})
+      end
+    end
+  end
+
+  @doc """
+  Generates labels for multiple assets in batch.
+
+  POST /api/v1/assets/batch-labels
+  Body: {"asset_ids": ["uuid1", "uuid2", ...]}
+  """
+  def batch_labels(conn, %{"asset_ids" => asset_ids}) when is_list(asset_ids) do
+    tenant = conn.assigns[:tenant]
+
+    # Fetch all assets
+    assets = Enum.map(asset_ids, fn id ->
+      Assets.get_asset!(tenant, id)
+    end)
+
+    case LabelGenerator.generate_batch_labels(tenant, assets) do
+      {:ok, result} ->
+        json(conn, %{data: result})
+
+      {:error, reason} ->
+        conn
+        |> put_status(:internal_server_error)
+        |> json(%{error: reason})
+    end
   end
 
   # Private helpers

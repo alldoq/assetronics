@@ -116,6 +116,15 @@
                           Edit asset
                         </router-link>
                         <button
+                          @click="handlePrintLabel"
+                          class="w-full flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                        >
+                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                          </svg>
+                          Print label
+                        </button>
+                        <button
                           @click="handleDeleteAsset"
                           class="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50"
                         >
@@ -543,6 +552,13 @@
         </div>
       </div>
     </div>
+
+    <!-- Print Label Modal -->
+    <AssetLabelModal
+      v-model="showPrintLabelModal"
+      :label-data="labelData"
+      :loading="loadingLabel"
+    />
   </MainLayout>
 </template>
 
@@ -552,6 +568,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
 import MainLayout from '@/components/MainLayout.vue'
+import AssetLabelModal from '@/components/AssetLabelModal.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -568,6 +585,9 @@ const activeTab = ref('details')
 const transactions = ref<any[]>([])
 const loadingTransactions = ref(false)
 const showAllAdditionalFields = ref(false)
+const showPrintLabelModal = ref(false)
+const labelData = ref<any>(null)
+const loadingLabel = ref(false)
 
 // Info Field Component (functional component using Vue's h())
 const InfoField = (props: { label: string; value?: string | number | boolean; monospace?: boolean }): VNode | null => {
@@ -952,6 +972,37 @@ const toggleActionsMenu = () => {
 
 const closeActionsMenu = () => {
   showActionsMenu.value = false
+}
+
+// Handle print label
+const handlePrintLabel = async () => {
+  closeActionsMenu()
+  loadingLabel.value = true
+  showPrintLabelModal.value = true
+
+  try {
+    const tenantId = authStore.user?.tenant_id || import.meta.env.VITE_DEFAULT_TENANT || 'acme'
+
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/assets/${assetId}/label`, {
+      headers: {
+        'Authorization': `Bearer ${authStore.token}`,
+        'X-Tenant-ID': tenantId
+      }
+    })
+
+    if (!response.ok) {
+      throw new Error('Failed to generate label')
+    }
+
+    const data = await response.json()
+    labelData.value = data.data
+  } catch (err: any) {
+    console.error('Failed to generate label:', err)
+    toast.error('Failed to generate label. Please try again.')
+    showPrintLabelModal.value = false
+  } finally {
+    loadingLabel.value = false
+  }
 }
 
 // Handle delete asset

@@ -195,6 +195,15 @@
                             Edit
                           </button>
                           <button
+                            @click="handlePrintLabel(asset)"
+                            class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                          >
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                            </svg>
+                            Print label
+                          </button>
+                          <button
                             @click="handleDeleteAsset(asset)"
                             class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
                           >
@@ -307,6 +316,15 @@
                         Edit
                       </button>
                       <button
+                        @click="handlePrintLabel(asset)"
+                        class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                      >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                        </svg>
+                        Print label
+                      </button>
+                      <button
                         @click="handleDeleteAsset(asset)"
                         class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
                       >
@@ -364,6 +382,13 @@
       :employees="employees"
       @assigned="handleAssetAssigned"
     />
+
+    <!-- Print Label Modal -->
+    <AssetLabelModal
+      v-model="showPrintLabelModal"
+      :label-data="labelData"
+      :loading="loadingLabel"
+    />
   </MainLayout>
 </template>
 
@@ -374,10 +399,15 @@ import MainLayout from '@/components/MainLayout.vue'
 import Pagination from '@/components/Pagination.vue'
 import EmployeeAutocomplete from '@/components/EmployeeAutocomplete.vue'
 import AssignAssetModal from '@/components/AssignAssetModal.vue'
+import AssetLabelModal from '@/components/AssetLabelModal.vue'
 import { assetsService, type Asset, type AssetFilters, type PaginationMeta } from '@/services/assets'
 import { employeesService, type Employee } from '@/services/employees'
+import { useAuthStore } from '@/stores/auth'
+import { useToast } from '@/composables/useToast'
 
 const router = useRouter()
+const authStore = useAuthStore()
+const toast = useToast()
 
 const searchQuery = ref('')
 const successMessage = ref('')
@@ -388,6 +418,9 @@ const isSearching = ref(false)
 const openDropdownId = ref<string | null>(null)
 const employees = ref<Employee[]>([])
 const showAssignModal = ref(false)
+const showPrintLabelModal = ref(false)
+const labelData = ref<any>(null)
+const loadingLabel = ref(false)
 const selectedAsset = ref<Asset | null>(null)
 
 // Filters state
@@ -493,6 +526,37 @@ const handleAssetAssigned = async () => {
   setTimeout(() => {
     successMessage.value = ''
   }, 5000)
+}
+
+// Print label
+const handlePrintLabel = async (asset: Asset) => {
+  closeDropdown()
+  loadingLabel.value = true
+  showPrintLabelModal.value = true
+
+  try {
+    const tenantId = authStore.user?.tenant_id || import.meta.env.VITE_DEFAULT_TENANT || 'acme'
+
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/assets/${asset.id}/label`, {
+      headers: {
+        'Authorization': `Bearer ${authStore.token}`,
+        'X-Tenant-ID': tenantId
+      }
+    })
+
+    if (!response.ok) {
+      throw new Error('Failed to generate label')
+    }
+
+    const data = await response.json()
+    labelData.value = data.data
+  } catch (err: any) {
+    console.error('Failed to generate label:', err)
+    toast.error('Failed to generate label. Please try again.')
+    showPrintLabelModal.value = false
+  } finally {
+    loadingLabel.value = false
+  }
 }
 
 // Delete asset

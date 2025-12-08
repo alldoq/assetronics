@@ -87,7 +87,10 @@ defmodule Assetronics.MixProject do
 
       # Google Authentication
       {:goth, "~> 1.4"},
-      {:joken, "~> 2.6"}
+      {:joken, "~> 2.6"},
+
+      # QR Code Generation
+      {:eqrcode, "~> 0.1.10"}
     ]
   end
 
